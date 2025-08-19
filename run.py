@@ -1,0 +1,75 @@
+import asyncio
+from datetime import datetime, timedelta
+from create_bot import bot, dp, logger, scheduler
+from aiogram.types import BotCommand, BotCommandScopeDefault
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiohttp import web
+from handlers.start_handler import start_router
+from config import WEBHOOK_PATH, WEBHOOK_URL, PORT
+
+
+async def on_startup():
+    await set_commands()
+    await bot.set_webhook(WEBHOOK_URL, 
+                          drop_pending_updates=True,
+                          allowed_updates=["message", "callback_query", "inline_query", "edited_message"])
+
+
+async def main():
+    await set_commands()
+
+    dp.include_routers(start_router)
+    
+    dp.startup.register(on_startup)
+
+    scheduler.start()
+
+    # scheduler.add_job(
+    #     <Имя функции, которую надо запускать>,
+    #     'cron',
+    #     hour=12,
+    #     minute=00,
+    #     timezone=pytz.timezone('Europe/Moscow'),
+    #     args=(bot,)
+    # )
+
+    app = web.Application()
+    webhook_requests_handler = SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot,
+        handle_callback_query=True,
+        handle_message=True,
+        handle_edited_updates=True,
+        handle_inline_query=True,
+    )
+
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+    setup_application(app, dp, bot=bot)
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+
+    port = int(PORT)
+    site = web.TCPSite(runner, host='0.0.0.0', port=port)
+    
+    try:
+        await site.start()
+        logger.info(f"Бот успешно запущен на порту {port}. URL: {WEBHOOK_URL}")
+        await asyncio.Event().wait()
+    finally:
+        scheduler.shutdown()
+        await bot.session.close()
+
+
+async def set_commands():
+    commands = [
+        BotCommand(command="start", description="Запускает бота")
+    ]
+    await bot.set_my_commands(commands=commands, scope=BotCommandScopeDefault())
+
+
+if __name__ == '__main__':
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        logger.info("Бот остановлен")
