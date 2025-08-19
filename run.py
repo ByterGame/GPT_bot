@@ -1,11 +1,11 @@
 import asyncio
-from datetime import datetime, timedelta
 from create_bot import bot, dp, logger, scheduler
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
 from handlers.start_handler import start_router
+from aiohttp import web
 from config import WEBHOOK_PATH, WEBHOOK_URL, PORT
+from database.core import db
 
 
 async def on_startup():
@@ -13,7 +13,7 @@ async def on_startup():
     await bot.set_webhook(WEBHOOK_URL, 
                           drop_pending_updates=True,
                           allowed_updates=["message", "callback_query", "inline_query", "edited_message"])
-
+    await db.connect()
 
 async def main():
     await set_commands()
