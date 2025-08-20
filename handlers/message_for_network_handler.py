@@ -22,7 +22,7 @@ async def simple_message_handler(message: Message):
             await message.answer("Думаю над твоим вопросом...")
             if user.end_subscription_day.date() <= datetime.now().date():
                 user.gpt_4o_mini_requests -= 1
-            reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context)
+            reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
             await message.answer(reply)
             user.context = new_context
             await db_repo.update_user(user)
@@ -33,7 +33,7 @@ async def simple_message_handler(message: Message):
                 return
             await message.answer("Думаю над твоим вопросом...")
             user.gpt_5_requests -= 1
-            reply, new_context = gpt.chat_with_gpt5(message.text, user.context)
+            reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
             await message.answer(reply)
             user.context = new_context
             await db_repo.update_user(user)
