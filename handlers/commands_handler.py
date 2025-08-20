@@ -19,7 +19,7 @@ async def set_mode(message: Message):
 async def set_mode(call: CallbackQuery):
     await call.answer()
     db_repo = await db.get_repository()
-    user = await db_repo.get_user(call.message.from_user.id)
+    user = await db_repo.get_user(call.from_user.id)
     neural_index = NEURAL_NETWORKS.index(call.data)
     if neural_index > 0 and user.end_subscription_day.date() <= datetime.now().date(): # до индекса 0 включительно бесплатные нейронки
         await call.answer("Эта нейросеть доступна только по подписке!")
