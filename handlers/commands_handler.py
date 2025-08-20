@@ -93,7 +93,7 @@ async def let_profile_handler(message: Message):
     user = await db_repo.get_user(message.from_user.id)
     text = ("Это ваш профиль.\n"
             "ID\n"
-            f"{message.from_user.id}")
+            f"{message.from_user.id}\n\n")
     if user.end_subscription_day.date() <= datetime.now().date():
         text += ("Сейчас у вас нет активной подписки\n"
                  "Для оформления подписки используйте команду /pay\n\n"
