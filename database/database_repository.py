@@ -1,3 +1,6 @@
+import json
+import logging
+from typing import Optional
 from database import create_pool
 from database.models import User
 from asyncpg import Pool
@@ -12,6 +15,65 @@ class DatabaseRepository:
         pool = await create_pool()
         return cls(pool)
     
-    async def create_user(self, user: User):
-        pass
+    async def create_user(self, user: User) -> bool:
+        """Добавление нового пользователя"""
+        query = """
+        INSERT INTO users_data (id)
+        VALUES ($1)
+        ON CONFLICT (id) DO NOTHING
+        RETURNING id
+        """
+        
+        async with self.pool.acquire() as conn:
+            result = await conn.fetchval(
+                query,
+                user.id
+            )
+            return result is not None
+        
+
+    async def get_user(self, user_id: int) -> Optional[User]:
+        """Получение пользователя"""
+        query = "SELECT * FROM users_data WHERE id = $1"
+        
+        async with self.pool.acquire() as conn:
+            record = await conn.fetchrow(query, user_id)
+            if record:
+                context = json.loads(record['context']) if record['context'] else None
+
+                return User(
+                    id=record['id'],
+                    context=context,
+                    end_subscription_day=record['end_subscription_day'],
+                    gpt_4o_mini_requests=record['gpt_4o_mini_requests'],
+                    gpt_5_requests=record['gpt_5_requests'],
+                    current_neural_network=record['current_neural_network']
+                )
+            logging.warning(f"Пользователь с id={user_id} не найден в БД")
+            return None
+        
+
+    async def update_user(self, user: User) -> None:
+        """Обновление данных пользователя"""
+        query = """
+        UPDATE users_data 
+        SET 
+            context = $1,
+            end_subscription_day = $2,
+            gpt_4o_mini_requests = $3,
+            gpt_5_requests = $4,
+            current_neural_network = $5
+        WHERE id = $6
+        """
+        
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                query,
+                json.dumps(user.context) if user.context else None,
+                user.end_subscription_day,
+                user.gpt_4o_mini_requests,
+                user.gpt_5_requests,
+                user.current_neural_network,
+                user.id
+            )
     

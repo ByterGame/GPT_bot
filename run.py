@@ -3,7 +3,8 @@ from create_bot import bot, dp, logger, scheduler
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from handlers.start_handler import start_router
-from handlers.general_handler import general_router
+from handlers.commands_handler import command_router
+from handlers.message_for_network_handler import general_router
 from aiohttp import web
 from config import WEBHOOK_PATH, WEBHOOK_URL, PORT
 from database.core import db
@@ -20,6 +21,7 @@ async def main():
     await set_commands()
 
     dp.include_routers(start_router,
+                       command_router,
                        general_router)
     
     dp.startup.register(on_startup)
@@ -65,7 +67,9 @@ async def main():
 
 async def set_commands():
     commands = [
-        BotCommand(command="start", description="Запускает бота")
+        BotCommand(command="start", description="Запускает бота"),
+        BotCommand(command="mode", description="Выбрать нейронку"),
+        BotCommand(command="pay", description="Купить подписку")
     ]
     await bot.set_my_commands(commands=commands, scope=BotCommandScopeDefault())
 

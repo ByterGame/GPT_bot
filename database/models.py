@@ -1,5 +1,12 @@
 from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional, List, Dict
+import pytz
 
 class User(BaseModel):
-    pass
-
+    id: int
+    end_subscription_day: datetime = datetime.now(pytz.timezone('Europe/Moscow'))
+    context: Optional[List[Dict]] = None
+    gpt_4o_mini_requests: int = 30
+    gpt_5_requests: int = 50
+    current_neural_network: int = 0
