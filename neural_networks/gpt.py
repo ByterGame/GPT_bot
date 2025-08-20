@@ -8,7 +8,7 @@ class GPT:
     def chat_with_gpt4o_mini(self, message_text):   
         try:
             response = self.openai.chat.completions.create(
-                model="gpt-4o.mini",
+                model="gpt-4o-mini",
                 messages=[{"role": "user", "content": message_text if message_text else ""}],
                 temperature=0.7
             )
@@ -18,4 +18,4 @@ class GPT:
 
         except Exception as e:
             logging.error(f"Ошибка GPT {e}")
-            return (e)
+            return (str(e))
