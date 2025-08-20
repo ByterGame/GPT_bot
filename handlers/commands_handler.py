@@ -15,7 +15,7 @@ async def set_mode(message: Message):
     await message.answer("Выбери нейронку, с которой хочешь продолжить общение", reply_markup=set_mode_kb())
 
 
-@command_router.callback_query(F.data in ["set_gpt_4o_mini", "set_gpt5_full"])
+@command_router.callback_query(F.data.in_(NEURAL_NETWORKS))
 async def set_mode(call: CallbackQuery):
     await call.answer()
     db_repo = await db.get_repository()
