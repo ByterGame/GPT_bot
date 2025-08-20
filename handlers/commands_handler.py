@@ -2,7 +2,7 @@ import logging
 from datetime import datetime,timedelta
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery, ContentType
+from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery, Update
 from keyboards.all_inline_kb import set_mode_kb, pay_kb
 from database.core import db
 
@@ -85,3 +85,8 @@ async def clear_context(message: Message):
     user.context = None
     await db_repo.update_user(user)
     await message.answer("Контекст очищен!")
+
+
+@command_router.update()
+async def catch_all(update: Update):
+    logging.info(f"RAW UPDATE: {update}")
