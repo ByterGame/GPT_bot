@@ -104,3 +104,5 @@ async def let_profile_handler(message: Message):
                  f"<b>Лимиты</b>:\ngpt 4o mini - безлимитное использование\n"
                  f"gpt 5 full - осталось {user.gpt_5_requests}/50\n"
                  f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date} в 00:00 МСК")
+        
+    await message.answer(text)
