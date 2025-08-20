@@ -24,8 +24,7 @@ class GPT:
         try:
             response = self.openai.chat.completions.create(
                 model="gpt-5",
-                messages=[{"role": "user", "content": message_text if message_text else ""}],
-                temperature=0.7
+                messages=[{"role": "user", "content": message_text if message_text else ""}]
             )
             reply = response.choices[0].message.content
             return reply
