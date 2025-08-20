@@ -8,14 +8,13 @@ class GPT:
 
     def chat_with_gpt4o_mini(self, message_text: str, context: Optional[List[Dict]]) -> Tuple:   
         try:
-            message = {"role": "user", "content": message_text if message_text else ""}
+            context.append({"role": "user", "content": message_text if message_text else ""})
             response = self.openai.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[message],
+                messages=context,
                 temperature=0.7
             )
             reply = response.choices[0].message.content
-            context.append(message)
             context.append({"role": "assistant", "content": reply})
             return (reply, context)
 
@@ -25,13 +24,12 @@ class GPT:
         
     def chat_with_gpt5(self, message_text: str, context: Optional[List[Dict]]) -> str:
         try:
-            message = {"role": "user", "content": message_text if message_text else ""}
+            context.append({"role": "user", "content": message_text if message_text else ""})
             response = self.openai.chat.completions.create(
                 model="gpt-5",
-                messages=[{"role": "user", "content": message_text if message_text else ""}]
+                messages=context
             )
             reply = response.choices[0].message.content
-            context.append(message)
             context.append({"role": "assistant", "content": reply})
             return (reply, context)
         except Exception as e:
