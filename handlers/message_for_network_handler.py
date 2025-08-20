@@ -25,7 +25,7 @@ async def simple_message_handler(message: Message):
                 await db_repo.update_user(user)
             await message.answer(gpt.chat_with_gpt4o_mini(message.text))
         case 1:
-            if user.end_subscription_day.date <= datetime.now().date() or user.gpt_5_requests < 1:
+            if user.end_subscription_day.date() <= datetime.now().date() or user.gpt_5_requests < 1:
                 await message.answer("Кажется твои запросы на сегодня уже закончились:( "
                                      "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся или используй другую нейросеть")
                 return
