@@ -56,7 +56,7 @@ async def start_pay(message: Message):
 async def pre_checkout(pre_checkout_query: PreCheckoutQuery):
     await pre_checkout_query.answer(ok=True)
 
-@command_router.message(ContentType.SUCCESSFUL_PAYMENT)
+@command_router.message(F.content_type == ContentType.SUCCESSFUL_PAYMENT)
 async def successful_payment(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
