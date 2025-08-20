@@ -15,6 +15,12 @@ async def set_mode(message: Message):
     await message.answer("Выбери нейронку, с которой хочешь продолжить общение", reply_markup=set_mode_kb())
 
 
+@command_router.callback_query(F.data)
+async def test_call(call: CallbackQuery):
+    await call.answer()
+    await call.message.answer(call.data)
+
+
 @command_router.callback_query(F.data.in_(NEURAL_NETWORKS))
 async def set_mode(call: CallbackQuery):
     await call.answer()
@@ -22,7 +28,7 @@ async def set_mode(call: CallbackQuery):
     user = await db_repo.get_user(call.from_user.id)
     neural_index = NEURAL_NETWORKS.index(call.data)
     if neural_index > 0 and user.end_subscription_day.date() <= datetime.now().date(): # до индекса 0 включительно бесплатные нейронки
-        await call.answer("Эта нейросеть доступна только по подписке!")
+        await call.message.answer("Эта нейросеть доступна только по подписке!")
         return
     user.current_neural_network()
     await db_repo.update_user(user)
