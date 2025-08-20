@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime,timedelta
 from aiogram import Router, F
 from aiogram.filters import Command
@@ -48,20 +49,22 @@ async def start_pay(message: Message):
                  f"Поэтому после оплаты ваша подписка просто продлится до {(user.end_subscription_day + timedelta(days=30)).date()}")
         
     await message.answer(text)
-    await message.answer_invoice(
+    await message.answer_invoice(  
         title="Месячная подписка",
         description="Продление подписки на 30 дней",
-        payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",
-        currency="XTR",
-        prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],
-        start_parameter="subscription"
+        prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],  
+        provider_token="",  
+        payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",  
+        currency="XTR",  
     )
 
 @command_router.pre_checkout_query()
 async def pre_checkout(pre_checkout_query: PreCheckoutQuery):
+    logging.info("Ожидание подтверждения")
     await pre_checkout_query.answer(ok=True)
+    logging.info("Подтверждение отправлено")
 
-@command_router.message(F.content_type == ContentType.SUCCESSFUL_PAYMENT)
+@command_router.message(F.successful_payment)
 async def successful_payment(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
