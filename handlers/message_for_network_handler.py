@@ -1,3 +1,4 @@
+import logging
 from aiogram import Router
 from aiogram.types import Message
 from neural_networks import gpt 
@@ -32,4 +33,6 @@ async def simple_message_handler(message: Message):
             user.gpt_5_requests -= 1
             await db_repo.update_user(user)
             await message.answer(gpt.chat_with_gpt5(message.text))
+        case _:
+            logging.info(f"Текущая нейронка {user.current_neural_network}")
 
