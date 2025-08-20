@@ -72,7 +72,8 @@ async def set_commands():
         BotCommand(command="start", description="Запускает бота"),
         BotCommand(command="mode", description="Выбрать нейронку"),
         BotCommand(command="pay", description="Купить подписку"),
-        BotCommand(command="profile", description="Профиль пользователя")
+        BotCommand(command="profile", description="Профиль пользователя"),
+        BotCommand(command="clear_context", description="очищает контекст")
     ]
     await bot.set_my_commands(commands=commands, scope=BotCommandScopeDefault())
 
