@@ -98,11 +98,11 @@ async def let_profile_handler(message: Message):
         text += ("Сейчас у вас нет активной подписки\n"
                  "Для оформления подписки используйте команду /pay\n\n"
                  f"<b>Лимиты</b>:\ngpt 4o mini - осталось {user.gpt_4o_mini_requests}/30\n"
-                 f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date} в 00:00 МСК")
+                 f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date()} в 00:00 МСК")
     else:
         text += ("Сейчас у вас активна подписка\n\n"
                  f"<b>Лимиты</b>:\ngpt 4o mini - безлимитное использование\n"
                  f"gpt 5 full - осталось {user.gpt_5_requests}/50\n"
-                 f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date} в 00:00 МСК")
+                 f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date()} в 00:00 МСК")
         
     await message.answer(text)
