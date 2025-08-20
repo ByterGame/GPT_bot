@@ -8,7 +8,7 @@ from database.core import db
 
 command_router = Router()
 NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full']
-PRICE_STARS = 600
+PRICE_STARS = 25
 
 @command_router.message(Command("mode"))
 async def set_mode(message: Message):
@@ -54,7 +54,7 @@ async def start_pay(message: Message):
         payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",
         provider_token="",
         currency="XTR",
-        prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS * 100)],
+        prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],
         start_parameter="subscription",
         need_email_address=False
     )
