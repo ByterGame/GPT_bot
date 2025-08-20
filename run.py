@@ -3,6 +3,7 @@ from create_bot import bot, dp, logger, scheduler
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from handlers.start_handler import start_router
+from handlers.general_handler import general_router
 from aiohttp import web
 from config import WEBHOOK_PATH, WEBHOOK_URL, PORT
 from database.core import db
@@ -18,7 +19,8 @@ async def on_startup():
 async def main():
     await set_commands()
 
-    dp.include_routers(start_router)
+    dp.include_routers(start_router,
+                       general_router)
     
     dp.startup.register(on_startup)
 
