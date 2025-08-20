@@ -1,4 +1,5 @@
 import asyncio
+import pytz
 from create_bot import bot, dp, logger, scheduler
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
@@ -8,6 +9,7 @@ from handlers.message_for_network_handler import general_router
 from aiohttp import web
 from config import WEBHOOK_PATH, WEBHOOK_URL, PORT
 from database.core import db
+from planned_activities.reset_limits import reset_limits
 
 
 async def on_startup():
@@ -29,14 +31,13 @@ async def main():
 
     scheduler.start()
 
-    # scheduler.add_job(
-    #     <Имя функции, которую надо запускать>,
-    #     'cron',
-    #     hour=12,
-    #     minute=00,
-    #     timezone=pytz.timezone('Europe/Moscow'),
-    #     args=(bot,)
-    # )
+    scheduler.add_job(
+        reset_limits,
+        'cron',
+        hour=00,
+        minute=00,
+        timezone=pytz.timezone('Europe/Moscow')
+    )
 
     app = web.Application()
     webhook_requests_handler = SimpleRequestHandler(
@@ -70,7 +71,8 @@ async def set_commands():
     commands = [
         BotCommand(command="start", description="Запускает бота"),
         BotCommand(command="mode", description="Выбрать нейронку"),
-        BotCommand(command="pay", description="Купить подписку")
+        BotCommand(command="pay", description="Купить подписку"),
+        BotCommand(command="profile", description="Профиль пользователя")
     ]
     await bot.set_my_commands(commands=commands, scope=BotCommandScopeDefault())
 

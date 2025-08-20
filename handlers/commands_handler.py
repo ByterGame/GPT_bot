@@ -9,7 +9,7 @@ from database.core import db
 
 command_router = Router()
 NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full']
-PRICE_STARS = 25
+PRICE_STARS = 100
 
 @command_router.message(Command("mode"))
 async def set_mode(message: Message):
@@ -51,7 +51,7 @@ async def start_pay(message: Message):
     await message.answer(text)
     await message.answer_invoice(  
         title="Месячная подписка",
-        description="Продление подписки на 30 дней",
+        description="gpt 4o mini - бузлимит\ngpt 5 full - 50 запросов в день",
         prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],  
         provider_token="",  
         payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",  
@@ -85,3 +85,22 @@ async def clear_context(message: Message):
     user.context = None
     await db_repo.update_user(user)
     await message.answer("Контекст очищен!")
+
+
+@command_router.message(Command("profile"))
+async def let_profile_handler(message: Message):
+    db_repo = await db.get_repository()
+    user = await db_repo.get_user(message.from_user.id)
+    text = ("Это ваш профиль.\n"
+            "ID\n"
+            f"{message.from_user.id}")
+    if user.end_subscription_day.date() <= datetime.now().date():
+        text += ("Сейчас у вас нет активной подписки\n"
+                 "Для оформления подписки используйте команду /pay\n\n"
+                 f"<b>Лимиты</b>:\ngpt 4o mini - осталось {user.gpt_4o_mini_requests}/30\n"
+                 f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date} в 00:00 МСК")
+    else:
+        text += ("Сейчас у вас активна подписка\n\n"
+                 f"<b>Лимиты</b>:\ngpt 4o mini - безлимитное использование\n"
+                 f"gpt 5 full - осталось {user.gpt_5_requests}/50\n"
+                 f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date} в 00:00 МСК")
