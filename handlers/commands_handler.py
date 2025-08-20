@@ -31,7 +31,7 @@ async def set_mode(call: CallbackQuery):
         await call.message.answer("Эта нейросеть доступна только по подписке!")
         return
     await call.message.answer("Нейронка выбрана успешно!")
-    user.current_neural_network()
+    user.current_neural_network = neural_index
     await db_repo.update_user(user)
 
 
@@ -52,11 +52,9 @@ async def start_pay(message: Message):
         title="Месячная подписка",
         description="Продление подписки на 30 дней",
         payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",
-        provider_token="",
         currency="XTR",
         prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],
-        start_parameter="subscription",
-        need_email_address=False
+        start_parameter="subscription"
     )
 
 @command_router.pre_checkout_query()
