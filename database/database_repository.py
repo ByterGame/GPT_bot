@@ -18,7 +18,7 @@ class DatabaseRepository:
     async def create_user(self, user: User) -> bool:
         """Добавление нового пользователя"""
         query = """
-        INSERT INTO users_data (id)
+        INSERT INTO users (id)
         VALUES ($1)
         ON CONFLICT (id) DO NOTHING
         RETURNING id
@@ -34,7 +34,7 @@ class DatabaseRepository:
 
     async def get_user(self, user_id: int) -> Optional[User]:
         """Получение пользователя"""
-        query = "SELECT * FROM users_data WHERE id = $1"
+        query = "SELECT * FROM users WHERE id = $1"
         
         async with self.pool.acquire() as conn:
             record = await conn.fetchrow(query, user_id)
@@ -56,7 +56,7 @@ class DatabaseRepository:
     async def update_user(self, user: User) -> None:
         """Обновление данных пользователя"""
         query = """
-        UPDATE users_data 
+        UPDATE users
         SET 
             context = $1,
             end_subscription_day = $2,
