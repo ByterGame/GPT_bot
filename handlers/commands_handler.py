@@ -56,16 +56,17 @@ async def start_pay(message: Message):
     await message.answer_invoice(
         title="Месячная подписка",
         description=(
-            "gpt 4o mini - безлимит\u000A"
-            "gpt 5 full - 50 запросов в день\u000A"
-            "gpt 5 vision - 25 запросов в день\u000A"
+            "gpt 4o mini - безлимит<pre>\n</pre>"
+            "gpt 5 full - 50 запросов в день<pre>\n</pre>"
+            "gpt 5 vision - 25 запросов в день<pre>\n</pre>"
             "DALL·E - 25 запросов в день"
         ),
         prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],
         provider_token="",
         payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",
         currency="XTR",
-        parse_mode=None
+        parse_mode="HTML",
+
     )
 
 @command_router.pre_checkout_query()
