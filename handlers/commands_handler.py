@@ -59,7 +59,8 @@ async def start_pay(message: Message):
         prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],  
         provider_token="",  
         payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",  
-        currency="XTR",  
+        currency="XTR", 
+        parse_mode="MarkdownV2" 
     )
 
 @command_router.pre_checkout_query()
