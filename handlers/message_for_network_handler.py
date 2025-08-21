@@ -11,7 +11,7 @@ from asyncio import sleep
 
 
 general_router = Router()
-NEURAL_NETWORKS = ['gpt-4o-mini', 'gpt-5', 'gpt-5-vision']  # для понимания того, за какую нейронку отвечает индекс user.current_neural_network
+NEURAL_NETWORKS = ['gpt-4o-mini', 'gpt-5', 'gpt-5-vision', 'DALL·E']  # для понимания того, за какую нейронку отвечает индекс user.current_neural_network
 
 album_buffer = defaultdict(list)
 
@@ -113,6 +113,31 @@ async def simple_message_handler(message: Message):
             )
 
             await message.answer(reply)
+            user.context = new_context
+            await db_repo.update_user(user)
+        case 3:
+            if user.end_subscription_day.date() <= datetime.now().date() or user.dalle_requests < 1:
+                await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(\n"
+                                     "Попробуй завтра или используй другую нейросеть")
+                return
+
+            await message.answer("Генерирую изображение...")
+
+            user.dalle_requests -= 1
+
+            prompt = message.caption if message.caption else message.text
+
+            image_urls, new_context = gpt.generate_image_with_dalle(
+                prompt=prompt,
+                context=user.context if user.context else []
+            )
+
+            if image_urls:
+                for url in image_urls:
+                    await message.answer_photo(url)
+            else:
+                await message.answer("Не удалось сгенерировать изображение :(")
+
             user.context = new_context
             await db_repo.update_user(user)
         case _:

@@ -4,6 +4,7 @@ from database.models import User
 DEFAULT_GPT_4O_LIMIT = 30
 DEFAULT_GPT_5_LIMIT = 50
 DEFAULT_GPT5_VISION_LIMIT = 25
+DALLE_LIMIT = 25
 
 async def reset_limits():
     db_repo = await db.get_repository()
@@ -19,6 +20,7 @@ async def reset_limits():
             context=record['context'],
             gpt_4o_mini_requests=DEFAULT_GPT_4O_LIMIT,
             gpt_5_requests=DEFAULT_GPT_5_LIMIT,
-            gpt_5_vision_requests=DEFAULT_GPT5_VISION_LIMIT
+            gpt_5_vision_requests=DEFAULT_GPT5_VISION_LIMIT,
+            dalle_requests=DALLE_LIMIT
         )
         await db_repo.update_user(user)

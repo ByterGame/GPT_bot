@@ -20,7 +20,7 @@ class GPT:
 
         except Exception as e:
             logging.error(f"Ошибка GPT 4o mini {e}")
-            return (str(e), [])
+            return (str(e), context)
         
     def chat_with_gpt5(self, message_text: str, context: Optional[List[Dict]]) -> str:
         try:
@@ -34,7 +34,7 @@ class GPT:
             return (reply, context)
         except Exception as e:
             logging.error(f"Ошибка GPT 5 {e}")
-            return (str(e), [])
+            return (str(e), context)
         
     def chat_with_gpt5_vision(self, message_text: str, image_urls: Optional[str], context: Optional[List[Dict]]) -> Tuple:
         try:
@@ -61,4 +61,21 @@ class GPT:
 
         except Exception as e:
             logging.error(f"Ошибка GPT 5 Vision {e}")
-            return (str(e), [])
+            return (str(e), context)
+        
+    def generate_image_with_dalle(self, prompt: str, context: Optional[List[Dict]], size: str = "1024x1024", n: int = 1) -> Tuple:
+        try:
+            context.append({"role": "user", "content": prompt if prompt else ""})
+            response = self.openai.images.generate(
+                model="dall-e-3",
+                prompt=prompt,
+                size=size,
+                n=n
+            )
+            image_urls = [item.url for item in response.data]
+            context.append({"role": "assistant", "content": image_urls})
+            return (image_urls, context)
+
+        except Exception as e:
+            logging.error(f"Ошибка генерации изображения DALL·E: {e}")
+            return (str(e), context)
