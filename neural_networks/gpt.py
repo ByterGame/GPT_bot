@@ -35,3 +35,30 @@ class GPT:
         except Exception as e:
             logging.error(f"Ошибка GPT 5 {e}")
             return (str(e), [])
+        
+    def chat_with_gpt5_vision(self, message_text: str, image_urls: Optional[str], context: Optional[List[Dict]]) -> Tuple:
+        try:
+            user_content = []
+            if message_text:
+                user_content.append({"type": "text", "text": message_text})
+            if image_urls:
+                for url in image_urls:
+                    user_content.append({"type": "image_url", "image_url": {"url": url}})
+
+            context.append({
+                "role": "user",
+                "content": user_content
+            })
+
+            response = self.openai.chat.completions.create(
+                model="gpt-5-vision",
+                messages=context
+            )
+
+            reply = response.choices[0].message.content
+            context.append({"role": "assistant", "content": reply})
+            return (reply, context)
+
+        except Exception as e:
+            logging.error(f"Ошибка GPT 5 Vision {e}")
+            return (str(e), [])

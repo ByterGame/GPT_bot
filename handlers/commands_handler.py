@@ -8,7 +8,7 @@ from database.core import db
 
 
 command_router = Router()
-NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full']
+NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full', 'set_gpt5_vision']
 PRICE_STARS = 100
 
 @command_router.message(Command("mode"))
@@ -31,6 +31,8 @@ async def set_mode(call: CallbackQuery):
     if neural_index > 0 and user.end_subscription_day.date() <= datetime.now().date(): # до индекса 0 включительно бесплатные нейронки
         await call.message.answer("Эта нейросеть доступна только по подписке!")
         return
+    if neural_index == 2:
+        await call.message.answer("Вы выбрали нейросеть gpt5-vision\nЭта нейросеть хорошо анализирует изображения, постарайтесь не тратить свои запросы на вопросы, которые не содержат изображение")
     await call.message.answer("Нейронка выбрана успешно!")
     user.current_neural_network = neural_index
     await db_repo.update_user(user)
@@ -51,7 +53,7 @@ async def start_pay(message: Message):
     await message.answer(text)
     await message.answer_invoice(  
         title="Месячная подписка",
-        description="gpt 4o mini - бузлимит\ngpt 5 full - 50 запросов в день",
+        description="gpt 4o mini - безлимит\n\ngpt 5 full - 50 запросов в день\n\ngpt 5 vision - 25 запросов в день",
         prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],  
         provider_token="",  
         payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",  
