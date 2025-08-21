@@ -45,7 +45,12 @@ async def start_pay(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
     text = ("В данный момент доступна оплата только звездами!\n"
-            f"Стоимость месячной подписки {PRICE_STARS} telegram stars\n")
+            f"Стоимость месячной подписки {PRICE_STARS} telegram stars\n"
+            "Подписка предоставляет следующие преимущества:"
+            "- gpt 4o mini - безлимит\n"
+            "- gpt 5 full - 50 запросов в день\n"
+            "- gpt 5 vision - 25 запросов в день\n"
+            "- DALL·E - 25 запросов в день")
     if user.end_subscription_day.date() <= datetime.now().date():
         text += (f"Похоже сейчас у вас нет активной подписки, поэтому после оплаты вы получите подписку до {(datetime.now() + timedelta(days=30)).date()}\n")
     else:
@@ -55,18 +60,11 @@ async def start_pay(message: Message):
     await message.answer(text)
     await message.answer_invoice(
         title="Месячная подписка",
-        description=(
-            "gpt 4o mini - безлимит<pre>\n</pre>"
-            "gpt 5 full - 50 запросов в день<pre>\n</pre>"
-            "gpt 5 vision - 25 запросов в день<pre>\n</pre>"
-            "DALL·E - 25 запросов в день"
-        ),
+        description="Детали в сообщении выше",
         prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],
         provider_token="",
         payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",
         currency="XTR",
-        parse_mode="HTML",
-
     )
 
 @command_router.pre_checkout_query()
