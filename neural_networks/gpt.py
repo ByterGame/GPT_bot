@@ -51,7 +51,7 @@ class GPT:
             })
 
             response = self.openai.chat.completions.create(
-                model="gpt-5-vision",
+                model="gpt-5",
                 messages=context
             )
 
