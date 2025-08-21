@@ -90,10 +90,10 @@ async def simple_message_handler(message: Message):
                 await message.answer("Кажется твои запросы на сегодня уже закончились:( "
                                      "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся или используй другую нейросеть")
                 return
-            processing_msg = await message.answer("Думаю над твоим вопросом...")
             if message.photo:
                 await message.answer("Для анализа изображений выбери gpt5 vision")
                 return
+            processing_msg = await message.answer("Думаю над твоим вопросом...")
             user.gpt_5_requests -= 1
             reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
             await message.answer(reply)

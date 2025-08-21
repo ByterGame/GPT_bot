@@ -56,9 +56,9 @@ async def start_pay(message: Message):
     await message.answer_invoice(
         title="Месячная подписка",
         description=(
-            "gpt 4o mini - безлимит\n"
-            "gpt 5 full - 50 запросов в день\n"
-            "gpt 5 vision - 25 запросов в день\n"
+            "gpt 4o mini - безлимит\u000A"
+            "gpt 5 full - 50 запросов в день\u000A"
+            "gpt 5 vision - 25 запросов в день\u000A"
             "DALL·E - 25 запросов в день"
         ),
         prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],
