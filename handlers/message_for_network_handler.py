@@ -6,15 +6,24 @@ from database.core import db
 from datetime import datetime
 from create_bot import bot
 from config import BOT_TOKEN
+from collections import defaultdict
+from asyncio import sleep
 
 
 general_router = Router()
 NEURAL_NETWORKS = ['gpt-4o-mini', 'gpt-5', 'gpt-5-vision']  # для понимания того, за какую нейронку отвечает индекс user.current_neural_network
 
+album_buffer = defaultdict(list)
 
 @general_router.message(F.media_group_id)
-async def handle_album(messages: list[Message]):
+async def handle_album(message: Message):
     db_repo = await db.get_repository()
+    album_id = message.media_group_id
+    album_buffer[album_id].append(message)
+
+    await sleep(0.5)
+    messages = album_buffer.pop(album_id)
+
     user = await db_repo.get_user(messages[0].from_user.id)
 
     if user.current_neural_network != 2:
