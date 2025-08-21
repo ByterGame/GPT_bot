@@ -8,6 +8,7 @@ from create_bot import bot
 from config import BOT_TOKEN
 from collections import defaultdict
 from asyncio import sleep
+from utils.all_utils import split_text_by_sentences
 
 
 general_router = Router()
@@ -57,7 +58,12 @@ async def handle_album(message: Message):
         context=user.context if user.context else []
     )
 
-    await messages[0].answer(reply)
+    if len(reply) < 4000:
+        await messages[0].answer(reply)
+    else:
+        chunks = split_text_by_sentences(reply)
+        for chunk in chunks:
+            await messages[0].answer(chunk)
     user.context = new_context
     await db_repo.update_user(user)
 
@@ -81,7 +87,12 @@ async def simple_message_handler(message: Message):
             if user.end_subscription_day.date() <= datetime.now().date():
                 user.gpt_4o_mini_requests -= 1
             reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
-            await message.answer(reply)
+            if len(reply) < 4000:
+                await message.answer(reply)
+            else:
+                chunks = split_text_by_sentences(reply)
+                for chunk in chunks:
+                    await message.answer(chunk)
             await processing_msg.delete()
             user.context = new_context
             await db_repo.update_user(user)
@@ -96,7 +107,12 @@ async def simple_message_handler(message: Message):
             processing_msg = await message.answer("Думаю над твоим вопросом...")
             user.gpt_5_requests -= 1
             reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
-            await message.answer(reply)
+            if len(reply) < 4000:
+                await message.answer(reply)
+            else:
+                chunks = split_text_by_sentences(reply)
+                for chunk in chunks:
+                    await message.answer(chunk)
             user.context = new_context
             await db_repo.update_user(user)
         case 2:
@@ -121,7 +137,12 @@ async def simple_message_handler(message: Message):
                 context=user.context if user.context else []
             )
 
-            await message.answer(reply)
+            if len(reply) < 4000:
+                await message.answer(reply)
+            else:
+                chunks = split_text_by_sentences(reply)
+                for chunk in chunks:
+                    await message.answer(chunk)
             await processing_msg.delete()
             user.context = new_context
             await db_repo.update_user(user)
