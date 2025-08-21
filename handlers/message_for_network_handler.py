@@ -1,4 +1,5 @@
 import logging
+import os
 from aiogram import Router, F
 from aiogram.types import Message
 from neural_networks import gpt 
@@ -12,7 +13,7 @@ from utils.all_utils import split_text_by_sentences
 
 
 general_router = Router()
-NEURAL_NETWORKS = ['gpt-4o-mini', 'gpt-5', 'gpt-5-vision', 'DALL·E']  # для понимания того, за какую нейронку отвечает индекс user.current_neural_network
+NEURAL_NETWORKS = ['gpt-4o-mini', 'gpt-5', 'gpt-5-vision', 'DALL·E', 'Whisper']  # для понимания того, за какую нейронку отвечает индекс user.current_neural_network
 
 album_buffer = defaultdict(list)
 
@@ -66,6 +67,46 @@ async def handle_album(message: Message):
             await messages[0].answer(chunk)
     user.context = new_context
     await db_repo.update_user(user)
+
+
+@general_router.message(F.voice | F.audio)
+async def handle_audio_message(message: Message):
+    db_repo = await db.get_repository()
+    user = await db_repo.get_user(message.from_user.id)
+
+    if user.end_subscription_day.date() <= datetime.now().date() or user.whisper_requests < 1:
+        await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня уже закончились :(")
+        return
+
+    processing_msg = await message.answer("Преобразую аудио в текст...")
+
+    file_id = message.voice.file_id if message.voice else message.audio.file_id
+
+    file_info = await bot.get_file(file_id)
+
+    local_path = f"./temp_{file_id}.ogg"
+    await bot.download_file(file_info.file_path, local_path)
+
+    transcript = gpt.transcribe_with_whisper(local_path)
+
+    try:
+        os.remove(local_path)
+    except Exception as e:
+        logging.warning(f"Не удалось удалить временный файл {local_path}: {e}")
+
+    user.whisper_requests -= 1
+    await db_repo.update_user(user)
+
+    if len(transcript) < 4000:
+        await message.answer(transcript)
+    else:
+        from utils.all_utils import split_text_by_sentences
+        chunks = split_text_by_sentences(transcript)
+        for chunk in chunks:
+            await message.answer(chunk)
+
+    await processing_msg.delete()
+
 
 
 @general_router.message()
@@ -176,6 +217,8 @@ async def simple_message_handler(message: Message):
 
             user.context = new_context
             await db_repo.update_user(user)
+        case 4:
+            pass # Логика вынесена в отдельный хендлер
         case _:
             logging.info(f"Текущая нейронка {user.current_neural_network}")
 

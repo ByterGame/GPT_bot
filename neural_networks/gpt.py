@@ -79,3 +79,16 @@ class GPT:
         except Exception as e:
             logging.error(f"Ошибка генерации изображения DALL·E: {e}")
             return (str(e), context)
+        
+    def transcribe_with_whisper(self, audio_file_path: str) -> str:
+        try:
+            with open(audio_file_path, "rb") as audio_file:
+                response = self.openai.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio_file
+                )
+            return response.text
+
+        except Exception as e:
+            logging.error(f"Ошибка Whisper: {e}")
+            return str(e)

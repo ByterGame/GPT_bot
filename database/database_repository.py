@@ -49,6 +49,7 @@ class DatabaseRepository:
                     gpt_5_requests=record['gpt_5_requests'],
                     gpt_5_vision_requests=record['gpt_5_vision_requests'],
                     dalle_requests = record['dalle_requests'],
+                    whisper_requests = record['whisper_requests'],
                     current_neural_network=record['current_neural_network']
                 )
             logging.warning(f"Пользователь с id={user_id} не найден в БД")
@@ -66,8 +67,9 @@ class DatabaseRepository:
             gpt_5_requests = $4,
             gpt_5_vision_requests = $5,
             dalle_requests = $6,
-            current_neural_network = $7
-        WHERE id = $8
+            whisper_requests = $7,
+            current_neural_network = $8
+        WHERE id = $9
         """
         
         async with self.pool.acquire() as conn:
@@ -79,6 +81,7 @@ class DatabaseRepository:
                 user.gpt_5_requests,
                 user.gpt_5_vision_requests,
                 user.dalle_requests,
+                user.whisper_requests,
                 user.current_neural_network,
                 user.id
             )

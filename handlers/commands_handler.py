@@ -8,7 +8,7 @@ from database.core import db
 
 
 command_router = Router()
-NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full', 'set_gpt5_vision', 'set_dalle']
+NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full', 'set_gpt5_vision', 'set_dalle', 'set_whisper']
 PRICE_STARS = 100
 
 @command_router.message(Command("mode"))
@@ -35,6 +35,8 @@ async def set_mode(call: CallbackQuery):
         await call.message.answer("Вы выбрали нейросеть gpt5-vision\nЭта нейросеть хорошо анализирует изображения, постарайтесь не тратить свои запросы на вопросы, которые не содержат изображение")
     if neural_index == 3:
         await call.message.answer("Вы выбрали DALL·E - нейросеть для генерации изображений. Одним сообщением опишите, какую картинку вы хотите получить и ожидайте (в скором времени добавим выбор размеров изображения и количества изображений)")
+    if neural_index == 4:
+        await call.message.answer("Вы выбрали whisper! Просто отправь мне телеграм аудио или файл, а я верну тебе его текстовую расшифровку!")
     await call.message.answer("Нейронка выбрана успешно!")
     user.current_neural_network = neural_index
     await db_repo.update_user(user)
@@ -46,11 +48,11 @@ async def start_pay(message: Message):
     user = await db_repo.get_user(message.from_user.id)
     text = ("В данный момент доступна оплата только звездами!\n"
             f"Стоимость месячной подписки {PRICE_STARS} telegram stars\n"
-            "Подписка предоставляет следующие преимущества:"
+            "Подписка предоставляет следующие преимущества:\n\n"
             "- gpt 4o mini - безлимит\n"
             "- gpt 5 full - 50 запросов в день\n"
             "- gpt 5 vision - 25 запросов в день\n"
-            "- DALL·E - 25 запросов в день")
+            "- DALL·E - 25 запросов в день\n\n")
     if user.end_subscription_day.date() <= datetime.now().date():
         text += (f"Похоже сейчас у вас нет активной подписки, поэтому после оплаты вы получите подписку до {(datetime.now() + timedelta(days=30)).date()}\n")
     else:
