@@ -72,11 +72,17 @@ async def simple_message_handler(message: Message):
                 await message.answer("Кажется твои запросы на сегодня уже закончились:( "
                                      "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся")
                 return
-            await message.answer("Думаю над твоим вопросом...")
+            if message.photo:
+                await message.answer("Для анализа изображений выбери gpt5 vision")
+                return
+            
+            processing_msg = await message.answer("Думаю над твоим вопросом...")
+            
             if user.end_subscription_day.date() <= datetime.now().date():
                 user.gpt_4o_mini_requests -= 1
             reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
             await message.answer(reply)
+            await processing_msg.delete()
             user.context = new_context
             await db_repo.update_user(user)
         case 1:
@@ -84,7 +90,10 @@ async def simple_message_handler(message: Message):
                 await message.answer("Кажется твои запросы на сегодня уже закончились:( "
                                      "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся или используй другую нейросеть")
                 return
-            await message.answer("Думаю над твоим вопросом...")
+            processing_msg = await message.answer("Думаю над твоим вопросом...")
+            if message.photo:
+                await message.answer("Для анализа изображений выбери gpt5 vision")
+                return
             user.gpt_5_requests -= 1
             reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
             await message.answer(reply)
@@ -96,7 +105,7 @@ async def simple_message_handler(message: Message):
                                      "Попробуй завтра или используй другую нейросеть")
                 return
 
-            await message.answer("Обрабатываю изображение...")
+            processing_msg = await message.answer("Обрабатываю изображение...")
 
             image_url = []
             if message.photo:
@@ -113,6 +122,7 @@ async def simple_message_handler(message: Message):
             )
 
             await message.answer(reply)
+            await processing_msg.delete()
             user.context = new_context
             await db_repo.update_user(user)
         case 3:
@@ -121,8 +131,12 @@ async def simple_message_handler(message: Message):
                                      "Попробуй завтра или используй другую нейросеть")
                 return
 
-            await message.answer("Генерирую изображение...")
-
+            if message.photo:
+                await message.answer("Для анализа изображений выбери gpt5 vision")
+                return
+            
+            processing_msg = await message.answer("Генерирую изображение...") 
+            
             user.dalle_requests -= 1
 
             prompt = message.caption if message.caption else message.text
@@ -135,6 +149,7 @@ async def simple_message_handler(message: Message):
             if image_urls:
                 for url in image_urls:
                     await message.answer_photo(url)
+                await processing_msg.delete()
             else:
                 await message.answer("Не удалось сгенерировать изображение :(")
 
