@@ -21,8 +21,11 @@ async def handle_album(message: Message):
     album_id = message.media_group_id
     album_buffer[album_id].append(message)
 
-    await sleep(0.5)
-    messages = album_buffer.pop(album_id)
+    await sleep(1)
+    messages = album_buffer.pop(album_id, None)
+    if messages is None:
+        logging.warning(f"Album {album_id} not found in buffer")
+        return
 
     user = await db_repo.get_user(messages[0].from_user.id)
 
