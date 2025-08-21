@@ -1,5 +1,5 @@
 import logging
-from aiogram import Router
+from aiogram import Router, F
 from aiogram.types import Message
 from neural_networks import gpt 
 from database.core import db
