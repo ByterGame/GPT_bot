@@ -53,14 +53,19 @@ async def start_pay(message: Message):
                  f"Поэтому после оплаты ваша подписка просто продлится до {(user.end_subscription_day + timedelta(days=30)).date()}")
         
     await message.answer(text)
-    await message.answer_invoice(  
+    await message.answer_invoice(
         title="Месячная подписка",
-        description="gpt 4o mini - безлимит\\ngpt 5 full - 50 запросов в день\\ngpt 5 vision - 25 запросов в день \\n DALL·E - 25 запросов в день",
-        prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],  
-        provider_token="",  
-        payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",  
-        currency="XTR", 
-        parse_mode="MarkdownV2" 
+        description=(
+            "gpt 4o mini - безлимит\n"
+            "gpt 5 full - 50 запросов в день\n"
+            "gpt 5 vision - 25 запросов в день\n"
+            "DALL·E - 25 запросов в день"
+        ),
+        prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],
+        provider_token="",
+        payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",
+        currency="XTR",
+        parse_mode=None
     )
 
 @command_router.pre_checkout_query()
