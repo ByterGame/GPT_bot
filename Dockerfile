@@ -19,7 +19,13 @@ RUN mvn clean package -DskipTests \
     && rm -rf target
 
 FROM python:3.13-slim
-RUN apt-get update && apt-get install -y openjdk-17-jdk-headless curl bash && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y wget curl bash && \
+    wget https://download.java.net/java/GA/jdk17/35/GPL/openjdk-17_linux-x64_bin.tar.gz && \
+    tar -xzf openjdk-17_linux-x64_bin.tar.gz -C /usr/local && \
+    rm openjdk-17_linux-x64_bin.tar.gz && \
+    ln -s /usr/local/jdk-17/bin/java /usr/bin/java
+
 
 WORKDIR /app
 
