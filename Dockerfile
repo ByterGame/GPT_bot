@@ -14,7 +14,6 @@ USER ${user}
 WORKDIR $SPRING_HOME
 
 COPY midjourney-proxy/ ./
-RUN mkdir -p /app/logs
 RUN mvn clean package -DskipTests \
     && mv target/midjourney-proxy-*.jar ./app.jar \
     && rm -rf target
@@ -26,6 +25,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+RUN mkdir -p /app/logs
 
 COPY bot/ ./bot/
 COPY bot/requirements.txt .
