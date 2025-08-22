@@ -14,6 +14,7 @@ USER ${user}
 WORKDIR $SPRING_HOME
 
 COPY midjourney-proxy/ ./
+RUN mkdir -p /app/logs
 RUN mvn clean package -DskipTests \
     && mv target/midjourney-proxy-*.jar ./app.jar \
     && rm -rf target
