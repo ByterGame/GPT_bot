@@ -18,14 +18,11 @@ RUN mvn clean package -DskipTests \
     && mv target/midjourney-proxy-*.jar ./app.jar \
     && rm -rf target
 
-FROM python:3.13-slim
-RUN apt-get update && \
-    apt-get install -y wget curl bash && \
-    wget https://download.java.net/java/GA/jdk17/35/GPL/openjdk-17_linux-x64_bin.tar.gz && \
-    tar -xzf openjdk-17_linux-x64_bin.tar.gz -C /usr/local && \
-    rm openjdk-17_linux-x64_bin.tar.gz && \
-    ln -s /usr/local/jdk-17/bin/java /usr/bin/java
+FROM openjdk:17-slim
 
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip curl bash && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -46,5 +43,4 @@ ENV JAVA_OPTS="-XX:MaxRAMPercentage=85 -Djava.awt.headless=true -XX:+HeapDumpOnO
  -Dcom.sun.management.jmxremote.authenticate=false -Dlogging.file.path=/home/spring/logs \
  -Dserver.port=8080 -Duser.timezone=Asia/Shanghai"
 
-RUN chmod +x start.sh
 ENTRYPOINT ["bash", "./start.sh"]
