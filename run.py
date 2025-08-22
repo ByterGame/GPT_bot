@@ -10,6 +10,7 @@ from aiohttp import web
 from config import WEBHOOK_PATH, WEBHOOK_URL, PORT
 from database.core import db
 from planned_activities.reset_limits import reset_limits
+from neural_networks import MidJourney
 
 
 async def on_startup():
@@ -61,6 +62,7 @@ async def main():
     try:
         await site.start()
         logger.info(f"Бот успешно запущен на порту {port}. URL: {WEBHOOK_URL}")
+        asyncio.create_task(MidJourney.start_discord())
         await asyncio.Event().wait()
     finally:
         scheduler.shutdown()

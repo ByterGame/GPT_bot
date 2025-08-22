@@ -3,6 +3,7 @@ import os
 from aiogram import Router, F
 from aiogram.types import Message
 from neural_networks import gpt 
+from neural_networks.MidJourney import send_prompt
 from database.core import db
 from datetime import datetime
 from create_bot import bot
@@ -13,7 +14,7 @@ from utils.all_utils import split_text_by_sentences
 
 
 general_router = Router()
-NEURAL_NETWORKS = ['gpt-4o-mini', 'gpt-5', 'gpt-5-vision', 'DALL·E', 'Whisper']  # для понимания того, за какую нейронку отвечает индекс user.current_neural_network
+NEURAL_NETWORKS = ['gpt-4o-mini', 'gpt-5', 'gpt-5-vision', 'DALL·E', 'Whisper', 'MidJourney']  # для понимания того, за какую нейронку отвечает индекс user.current_neural_network
 
 album_buffer = defaultdict(list)
 
@@ -102,6 +103,7 @@ async def handle_audio_message(message: Message):
     if neural_index != 4:
         fake_message = message.model_copy(update={"text": transcript})
         await simple_message_handler(fake_message)
+        await processing_msg.delete()
         return
 
     if len(transcript) < 4000:
@@ -226,6 +228,21 @@ async def simple_message_handler(message: Message):
             await db_repo.update_user(user)
         case 4:
             pass # Логика вынесена в отдельный хендлер
+        case 5:
+            if user.end_subscription_day.date() <= datetime.now().date() or user.midjourney_requests < 1:
+                await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(\n"
+                                     "Попробуй завтра или используй другую нейросеть")
+                return
+
+            if message.photo:
+                await message.answer("Для анализа изображений выбери gpt5 vision")
+                return
+            
+            tg_id = message.chat.id
+            full_prompt = f"[tg:{tg_id}] {message.text}"
+
+            await send_prompt(full_prompt)
+            await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
         case _:
             logging.info(f"Текущая нейронка {user.current_neural_network}")
 
