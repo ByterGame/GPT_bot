@@ -74,7 +74,7 @@ async def handle_audio_message(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
 
-    neural_index = user.current_neural_network()
+    neural_index = user.current_neural_network
 
     if user.end_subscription_day.date() <= datetime.now().date() or user.whisper_requests < 1:
         await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня уже закончились :(")
