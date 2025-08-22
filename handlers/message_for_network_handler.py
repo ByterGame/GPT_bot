@@ -1,4 +1,5 @@
 import logging
+import requests
 import os
 from aiogram import Router, F
 from aiogram.types import Message
@@ -7,14 +8,15 @@ from neural_networks.MidJourney import send_prompt
 from database.core import db
 from datetime import datetime
 from create_bot import bot
-from config import BOT_TOKEN
+from config import BOT_TOKEN, GOOGLE_API_KEY, CX_ID
 from collections import defaultdict
 from asyncio import sleep
 from utils.all_utils import split_text_by_sentences
+from database.models import User
 
 
 general_router = Router()
-NEURAL_NETWORKS = ['gpt-4o-mini', 'gpt-5', 'gpt-5-vision', 'DALL·E', 'Whisper', 'MidJourney']  # для понимания того, за какую нейронку отвечает индекс user.current_neural_network
+NEURAL_NETWORKS = ['gpt-4o-mini', 'gpt-5', 'gpt-5-vision', 'DALL·E', 'Whisper', 'search with links']  # для понимания того, за какую нейронку отвечает индекс user.current_neural_network
 
 album_buffer = defaultdict(list)
 
@@ -229,20 +231,84 @@ async def simple_message_handler(message: Message):
         case 4:
             pass # Логика вынесена в отдельный хендлер
         case 5:
-            if user.end_subscription_day.date() <= datetime.now().date() or user.midjourney_requests < 1:
-                await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(\n"
-                                     "Попробуй завтра или используй другую нейросеть")
-                return
-
-            if message.photo:
-                await message.answer("Для анализа изображений выбери gpt5 vision")
-                return
+            await handle_search_with_links(message, user)
             
-            tg_id = message.chat.id
-            full_prompt = f"[tg:{tg_id}] {message.text}"
+            # Старый код для миджорни
+            # if user.end_subscription_day.date() <= datetime.now().date() or user.midjourney_requests < 1:
+            #     await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(\n"
+            #                          "Попробуй завтра или используй другую нейросеть")
+            #     return
 
-            await send_prompt(full_prompt)
-            await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
+            # if message.photo:
+            #     await message.answer("Для анализа изображений выбери gpt5 vision")
+            #     return
+            
+            # tg_id = message.chat.id
+            # full_prompt = f"[tg:{tg_id}] {message.text}"
+
+            # await send_prompt(full_prompt)
+            # await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
         case _:
             logging.info(f"Текущая нейронка {user.current_neural_network}")
+
+
+def web_search(query, max_results=3):
+
+    url = "https://www.googleapis.com/customsearch/v1"
+    params = {
+        "key": GOOGLE_API_KEY,
+        "cx": CX_ID,
+        "q": query,
+        "num": max_results
+    }
+
+    r = requests.get(url, params=params)
+    data = r.json()
+    items = data.get("items", [])
+    sources = []
+
+    for item in items:
+        sources.append({
+            "title": item.get("title"),
+            "url": item.get("link"),
+            "snippet": item.get("snippet")
+        })
+
+    return sources
+
+async def handle_search_with_links(message: Message, user: User):
+    db_repo = await db.get_repository()
+
+    if user.end_subscription_day.date() <= datetime.now().date() or user.search_with_links_requests < 1:
+        await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(")
+        return
+
+    query = message.text
+    processing_msg = await message.answer("Ищу информацию в интернете...")
+
+    sources = web_search(query)
+
+    prompt = f"Используя эти источники, ответь на вопрос: {query}\n\n"
+    for i, src in enumerate(sources, 1):
+        prompt += f"{i}. {src['title']}: {src['url']}\n"
+
+    prompt += "\nСделай краткий и понятный ответ с ссылками на источники."
+
+    reply, new_context = gpt.chat_with_gpt4o_mini(
+        message_text=prompt,
+        context=user.context if user.context else []
+    )
+
+    if len(reply) < 4000:
+        await message.answer(reply)
+    else:
+        from utils.all_utils import split_text_by_sentences
+        chunks = split_text_by_sentences(reply)
+        for chunk in chunks:
+            await message.answer(chunk)
+
+    user.context = new_context
+    user.search_with_links_requests -= 1
+    await db_repo.update_user(user)
+    await processing_msg.delete()
 

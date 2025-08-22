@@ -13,4 +13,5 @@ class User(BaseModel):
     dalle_requests: int = 25
     whisper_requests: int = 30
     midjourney_requests: int = 20
+    search_with_links_requests: int = 25
     current_neural_network: int = 0

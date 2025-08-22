@@ -8,7 +8,7 @@ from database.core import db
 
 
 command_router = Router()
-NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full', 'set_gpt5_vision', 'set_dalle', 'set_whisper', 'set_midjorney']
+NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full', 'set_gpt5_vision', 'set_dalle', 'set_whisper', 'set_web_search']
 PRICE_STARS = 100
 
 @command_router.message(Command("mode"))
@@ -33,10 +33,12 @@ async def set_mode(call: CallbackQuery):
         return
     if neural_index == 2:
         await call.message.answer("Вы выбрали нейросеть gpt5-vision\nЭта нейросеть хорошо анализирует изображения, постарайтесь не тратить свои запросы на вопросы, которые не содержат изображение")
-    if neural_index in [3, 5]:
-        await call.message.answer("Вы выбрали нейросеть для генерации изображений. Одним сообщением опишите, какую картинку вы хотите получить и ожидайте.")
+    if neural_index in 3:
+        await call.message.answer("Вы выбрали DALLE - нейросеть для генерации изображений! Одним сообщением опишите, какую картинку вы хотите получить и ожидайте.")
     if neural_index == 4:
         await call.message.answer("Вы выбрали whisper! Просто отправь мне телеграм аудио или файл, а я верну тебе его текстовую расшифровку!")
+    if neural_index == 5:
+        await call.message.answer("Вы выбрали поиск с ссылками! Просто напишите свой запрос и ожидайте.")
     await call.message.answer("Нейронка выбрана успешно!")
     user.current_neural_network = neural_index
     await db_repo.update_user(user)
