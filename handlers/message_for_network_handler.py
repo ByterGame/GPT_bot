@@ -100,8 +100,8 @@ async def handle_audio_message(message: Message):
     await db_repo.update_user(user)
 
     if neural_index != 4:
-        message.text = transcript  
-        await simple_message_handler(message)
+        fake_message = message.model_copy(update={"text": transcript})
+        await simple_message_handler(fake_message)
         return
 
     if len(transcript) < 4000:
