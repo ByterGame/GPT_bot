@@ -7,6 +7,7 @@ DEFAULT_GPT5_VISION_LIMIT = 25
 DALLE_LIMIT = 25
 WHISPER_LIMIT = 30
 MIDJOURNEY_LIMIT = 20
+SEARCH_WITH_LINKS_LIMIT = 25
 
 async def reset_limits():
     db_repo = await db.get_repository()
@@ -25,6 +26,7 @@ async def reset_limits():
             gpt_5_vision_requests=DEFAULT_GPT5_VISION_LIMIT,
             dalle_requests=DALLE_LIMIT,
             whisper_requests=WHISPER_LIMIT,
-            midjourney_requests=MIDJOURNEY_LIMIT
+            midjourney_requests=MIDJOURNEY_LIMIT,
+            search_with_links_requests=SEARCH_WITH_LINKS_LIMIT
         )
         await db_repo.update_user(user)

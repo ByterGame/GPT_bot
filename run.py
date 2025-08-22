@@ -62,7 +62,7 @@ async def main():
     try:
         await site.start()
         logger.info(f"Бот успешно запущен на порту {port}. URL: {WEBHOOK_URL}")
-        asyncio.create_task(MidJourney.start_discord())
+        # asyncio.create_task(MidJourney.start_discord())
         await asyncio.Event().wait()
     finally:
         scheduler.shutdown()
