@@ -39,9 +39,9 @@ RUN chmod +x start.sh
 EXPOSE 8080 10000
 
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=85 -Djava.awt.headless=true -XX:+HeapDumpOnOutOfMemoryError \
- -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -Xlog:gc:file=/home/spring/logs/gc.log \
+ -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -Xlog:gc:file=/app/logs/gc.log \
  -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9876 -Dcom.sun.management.jmxremote.ssl=false \
- -Dcom.sun.management.jmxremote.authenticate=false -Dlogging.file.path=/home/spring/logs \
+ -Dcom.sun.management.jmxremote.authenticate=false -Dlogging.file.path=/app/logs \
  -Dserver.port=8080 -Duser.timezone=Asia/Shanghai"
 
 ENTRYPOINT ["bash", "./start.sh"]
