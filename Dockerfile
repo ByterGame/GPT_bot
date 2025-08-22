@@ -18,8 +18,8 @@ RUN mvn clean package -DskipTests \
     && mv target/midjourney-proxy-*.jar ./app.jar \
     && rm -rf target
 
-FROM python:3.11-slim
-RUN apt-get update && apt-get install -y openjdk-17-jdk curl bash && rm -rf /var/lib/apt/lists/*
+FROM python:3.13-slim
+RUN apt-get update && apt-get install -y openjdk-17-jdk-headless curl bash && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
