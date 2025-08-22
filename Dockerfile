@@ -19,10 +19,11 @@ RUN mvn clean package -DskipTests \
     && rm -rf target
 
 FROM python:3.11-slim
+RUN apt-get update && apt-get install -y openjdk-17-jdk curl bash && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY bot/ ./
+COPY bot/ ./bot/
 COPY bot/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 

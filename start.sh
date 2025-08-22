@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 
 java $JAVA_OPTS -jar /app/midjourney-proxy.jar &
 
