@@ -124,132 +124,131 @@ async def handle_audio_message(message: Message):
 async def simple_message_handler(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
-    match user.current_neural_network:
-        case 0:
-            if user.gpt_4o_mini_requests < 1 and user.end_subscription_day.date() <= datetime.now().date():
-                await message.answer("Кажется твои запросы на сегодня уже закончились:( "
-                                     "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся")
-                return
-            if message.photo:
-                await message.answer("Для анализа изображений выбери gpt5 vision")
-                return
-            
-            processing_msg = await message.answer("Думаю над твоим вопросом...")
-            
-            if user.end_subscription_day.date() <= datetime.now().date():
-                user.gpt_4o_mini_requests -= 1
-            reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
-            if len(reply) < 4000:
-                await message.answer(reply)
-            else:
-                chunks = split_text_by_sentences(reply)
-                for chunk in chunks:
-                    await message.answer(chunk)
+    if user.current_neural_network == 0:
+        if user.gpt_4o_mini_requests < 1 and user.end_subscription_day.date() <= datetime.now().date():
+            await message.answer("Кажется твои запросы на сегодня уже закончились:( "
+                                    "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся")
+            return
+        if message.photo:
+            await message.answer("Для анализа изображений выбери gpt5 vision")
+            return
+        
+        processing_msg = await message.answer("Думаю над твоим вопросом...")
+        
+        if user.end_subscription_day.date() <= datetime.now().date():
+            user.gpt_4o_mini_requests -= 1
+        reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
+        if len(reply) < 4000:
+            await message.answer(reply)
+        else:
+            chunks = split_text_by_sentences(reply)
+            for chunk in chunks:
+                await message.answer(chunk)
+        await processing_msg.delete()
+        user.context = new_context
+        await db_repo.update_user(user)
+    if user.current_neural_network == 1:
+        if user.end_subscription_day.date() <= datetime.now().date() or user.gpt_5_requests < 1:
+            await message.answer("Кажется твои запросы на сегодня уже закончились:( "
+                                    "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся или используй другую нейросеть")
+            return
+        if message.photo:
+            await message.answer("Для анализа изображений выбери gpt5 vision")
+            return
+        processing_msg = await message.answer("Думаю над твоим вопросом...")
+        user.gpt_5_requests -= 1
+        reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
+        if len(reply) < 4000:
+            await message.answer(reply)
+        else:
+            chunks = split_text_by_sentences(reply)
+            for chunk in chunks:
+                await message.answer(chunk)
+        user.context = new_context
+        await db_repo.update_user(user)
+    if user.current_neural_network == 2:
+        if user.end_subscription_day.date() <= datetime.now().date() or user.gpt_5_vision_requests < 1:
+            await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня уже закончились:( \n"
+                                    "Попробуй завтра или используй другую нейросеть")
+            return
+
+        processing_msg = await message.answer("Обрабатываю изображение...")
+
+        image_url = []
+        if message.photo:
+            photo = message.photo[-1]
+            file_info = await bot.get_file(photo.file_id)
+            image_url.append(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}")
+
+        user.gpt_5_vision_requests -= 1
+
+        reply, new_context = gpt.chat_with_gpt5_vision(
+            message_text=message.caption if message.caption else message.text,
+            image_urls=image_url,
+            context=user.context if user.context else []
+        )
+
+        if len(reply) < 4000:
+            await message.answer(reply)
+        else:
+            chunks = split_text_by_sentences(reply)
+            for chunk in chunks:
+                await message.answer(chunk)
+        await processing_msg.delete()
+        user.context = new_context
+        await db_repo.update_user(user)
+    if user.current_neural_network == 3:
+        if user.end_subscription_day.date() <= datetime.now().date() or user.dalle_requests < 1:
+            await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(\n"
+                                    "Попробуй завтра или используй другую нейросеть")
+            return
+
+        if message.photo:
+            await message.answer("Для анализа изображений выбери gpt5 vision")
+            return
+        
+        processing_msg = await message.answer("Генерирую изображение...") 
+        
+        user.dalle_requests -= 1
+
+        prompt = message.caption if message.caption else message.text
+
+        image_urls, new_context = gpt.generate_image_with_dalle(
+            prompt=prompt,
+            context=user.context if user.context else []
+        )
+
+        if image_urls:
+            for url in image_urls:
+                await message.answer_photo(url)
             await processing_msg.delete()
-            user.context = new_context
-            await db_repo.update_user(user)
-        case 1:
-            if user.end_subscription_day.date() <= datetime.now().date() or user.gpt_5_requests < 1:
-                await message.answer("Кажется твои запросы на сегодня уже закончились:( "
-                                     "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся или используй другую нейросеть")
-                return
-            if message.photo:
-                await message.answer("Для анализа изображений выбери gpt5 vision")
-                return
-            processing_msg = await message.answer("Думаю над твоим вопросом...")
-            user.gpt_5_requests -= 1
-            reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
-            if len(reply) < 4000:
-                await message.answer(reply)
-            else:
-                chunks = split_text_by_sentences(reply)
-                for chunk in chunks:
-                    await message.answer(chunk)
-            user.context = new_context
-            await db_repo.update_user(user)
-        case 2:
-            if user.end_subscription_day.date() <= datetime.now().date() or user.gpt_5_vision_requests < 1:
-                await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня уже закончились:( \n"
-                                     "Попробуй завтра или используй другую нейросеть")
-                return
+        else:
+            await message.answer("Не удалось сгенерировать изображение :(")
 
-            processing_msg = await message.answer("Обрабатываю изображение...")
+        user.context = new_context
+        await db_repo.update_user(user)
+    if user.current_neural_network == 4:
+        pass # Логика вынесена в отдельный хендлер
+    if user.current_neural_network == 5:
+        await handle_search_with_links(message, user)
+        
+        # Старый код для миджорни
+        # if user.end_subscription_day.date() <= datetime.now().date() or user.midjourney_requests < 1:
+        #     await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(\n"
+        #                          "Попробуй завтра или используй другую нейросеть")
+        #     return
 
-            image_url = []
-            if message.photo:
-                photo = message.photo[-1]
-                file_info = await bot.get_file(photo.file_id)
-                image_url.append(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}")
+        # if message.photo:
+        #     await message.answer("Для анализа изображений выбери gpt5 vision")
+        #     return
+        
+        # tg_id = message.chat.id
+        # full_prompt = f"[tg:{tg_id}] {message.text}"
 
-            user.gpt_5_vision_requests -= 1
-
-            reply, new_context = gpt.chat_with_gpt5_vision(
-                message_text=message.caption if message.caption else message.text,
-                image_urls=image_url,
-                context=user.context if user.context else []
-            )
-
-            if len(reply) < 4000:
-                await message.answer(reply)
-            else:
-                chunks = split_text_by_sentences(reply)
-                for chunk in chunks:
-                    await message.answer(chunk)
-            await processing_msg.delete()
-            user.context = new_context
-            await db_repo.update_user(user)
-        case 3:
-            if user.end_subscription_day.date() <= datetime.now().date() or user.dalle_requests < 1:
-                await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(\n"
-                                     "Попробуй завтра или используй другую нейросеть")
-                return
-
-            if message.photo:
-                await message.answer("Для анализа изображений выбери gpt5 vision")
-                return
-            
-            processing_msg = await message.answer("Генерирую изображение...") 
-            
-            user.dalle_requests -= 1
-
-            prompt = message.caption if message.caption else message.text
-
-            image_urls, new_context = gpt.generate_image_with_dalle(
-                prompt=prompt,
-                context=user.context if user.context else []
-            )
-
-            if image_urls:
-                for url in image_urls:
-                    await message.answer_photo(url)
-                await processing_msg.delete()
-            else:
-                await message.answer("Не удалось сгенерировать изображение :(")
-
-            user.context = new_context
-            await db_repo.update_user(user)
-        case 4:
-            pass # Логика вынесена в отдельный хендлер
-        case 5:
-            await handle_search_with_links(message, user)
-            
-            # Старый код для миджорни
-            # if user.end_subscription_day.date() <= datetime.now().date() or user.midjourney_requests < 1:
-            #     await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(\n"
-            #                          "Попробуй завтра или используй другую нейросеть")
-            #     return
-
-            # if message.photo:
-            #     await message.answer("Для анализа изображений выбери gpt5 vision")
-            #     return
-            
-            # tg_id = message.chat.id
-            # full_prompt = f"[tg:{tg_id}] {message.text}"
-
-            # await send_prompt(full_prompt)
-            # await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
-        case _:
-            logging.info(f"Текущая нейронка {user.current_neural_network}")
+        # await send_prompt(full_prompt)
+        # await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
+    else:
+        logging.info(f"Текущая нейронка {user.current_neural_network}")
 
 
 def web_search(query, max_results=3):
