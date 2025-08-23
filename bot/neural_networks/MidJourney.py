@@ -16,4 +16,4 @@ async def send_prompt(prompt: str):
     }
 
     response = requests.post(f"{MJ_PROXY_URL}/imagine", headers=headers, json=data)
-    return response.json()
+    return str(response)
