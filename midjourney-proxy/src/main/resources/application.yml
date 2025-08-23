@@ -5,5 +5,5 @@ mj:
   translate-way: null
   accounts:
     - token: NzUxODQ4MTc3NDYzNzIyMDc1.G6JIev.h0JWKcl9rWoxwpf1YoRpEzxkTX_DQysykARPbk 
-      guildId: 1408002102206271548  
-      channelId: 1408002102877491253 
+      guildId: "1408002102206271548"  
+      channelId: "1408002102877491253" 
