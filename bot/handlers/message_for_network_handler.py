@@ -4,7 +4,7 @@ import os
 from aiogram import Router, F
 from aiogram.types import Message
 from neural_networks import gpt 
-from neural_networks.MidJourney import send_prompt
+# from neural_networks.MidJourney import send_prompt
 from database.core import db
 from datetime import datetime
 from create_bot import bot
