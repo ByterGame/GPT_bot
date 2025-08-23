@@ -42,6 +42,6 @@ ENV JAVA_OPTS="-XX:MaxRAMPercentage=85 -Djava.awt.headless=true -XX:+HeapDumpOnO
  -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -Xlog:gc:file=/app/logs/gc.log \
  -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9876 -Dcom.sun.management.jmxremote.ssl=false \
  -Dcom.sun.management.jmxremote.authenticate=false -Dlogging.file.path=/app/logs \
- -Dserver.port=8080 -Duser.timezone=Asia/Shanghai"
+ -Dserver.port=8081 -Dserver.address=0.0.0.0 -Duser.timezone=Asia/Shanghai"
 
 ENTRYPOINT ["bash", "./start.sh"]
