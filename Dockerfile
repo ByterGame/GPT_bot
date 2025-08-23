@@ -36,7 +36,7 @@ COPY --from=builder /home/spring/app.jar /app/midjourney-proxy.jar
 COPY start.sh ./start.sh
 RUN chmod +x start.sh
 
-EXPOSE 10000 8080
+EXPOSE 8080 8081
 
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=85 -Djava.awt.headless=true -XX:+HeapDumpOnOutOfMemoryError \
  -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -Xlog:gc:file=/app/logs/gc.log \
