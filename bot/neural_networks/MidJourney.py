@@ -3,7 +3,7 @@ from config import DISCORD_CHANNEL_ID, DISCORD_SERVER_ID, DISCORD_TOKEN
 
 MJ_PROXY_URL = "http://localhost:8081/mj"
 
-def send_prompt(prompt: str):
+async def send_prompt(prompt: str):
     headers = {
         "Authorization": f"Bot {DISCORD_TOKEN}",
         "Content-Type": "application/json"

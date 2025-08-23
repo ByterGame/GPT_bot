@@ -244,7 +244,7 @@ async def simple_message_handler(message: Message):
         tg_id = message.chat.id
         full_prompt = f"[tg:{tg_id}] {message.text}"
         await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
-        ans = send_prompt(full_prompt)
+        ans = await send_prompt(full_prompt)
         await message.answer(ans)
     else:
         logging.info(f"Текущая нейронка {user.current_neural_network}")
