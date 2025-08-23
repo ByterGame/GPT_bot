@@ -4,6 +4,6 @@ mj:
     timeout: 30d
   translate-way: null
   accounts:
-    - token: NzUxODQ4MTc3NDYzNzIyMDc1.G6JIev.h0JWKcl9rWoxwpf1YoRpEzxkTX_DQysykARPbk 
+    - userToken: NzUxODQ4MTc3NDYzNzIyMDc1.G6JIev.h0JWKcl9rWoxwpf1YoRpEzxkTX_DQysykARPbk 
       guildId: "1408002102206271548"  
       channelId: "1408002102877491253" 
