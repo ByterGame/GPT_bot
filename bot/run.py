@@ -7,7 +7,7 @@ from handlers.start_handler import start_router
 from handlers.commands_handler import command_router
 from handlers.message_for_network_handler import general_router
 from aiohttp import web
-from config import WEBHOOK_PATH, WEBHOOK_URL, PORT
+from config import WEBHOOK_PATH, WEBHOOK_URL, PORT_BOT
 from database.core import db
 from planned_activities.reset_limits import reset_limits
 from neural_networks import MidJourney
@@ -56,7 +56,7 @@ async def main():
     runner = web.AppRunner(app)
     await runner.setup()
 
-    port = int(PORT)
+    port = int(PORT_BOT)
     site = web.TCPSite(runner, host='0.0.0.0', port=port)
     
     try:
