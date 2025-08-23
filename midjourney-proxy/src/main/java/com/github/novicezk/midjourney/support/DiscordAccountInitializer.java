@@ -61,7 +61,11 @@ public class DiscordAccountInitializer implements ApplicationRunner {
 				}
 				instances.add(instance);
 			} catch (Exception e) {
-				log.error("Account({}) init fail, disabled: {}", account.getDisplay(), e.getMessage());
+				log.error("Account({}) init fail, disabled: {}", account.getDisplay(), e.getMessage(), e);
+
+				if (e instanceof ValidateException ve) {
+					log.error("ValidateException details: {}", ve.getMessage());
+				}
 				account.setEnable(false);
 			}
 		}
