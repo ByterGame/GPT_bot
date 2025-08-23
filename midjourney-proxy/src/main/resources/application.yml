@@ -3,3 +3,7 @@ mj:
     type: in_memory
     timeout: 30d
   translate-way: null
+  accounts:
+    - token: "${DISCORD_USER_TOKEN}"  
+      guildId: "${DISCORD_SERVER_ID}"  
+      channelId: "${DISCORD_CHANNEL_ID}" 
