@@ -245,7 +245,11 @@ async def simple_message_handler(message: Message):
         full_prompt = f"[tg:{tg_id}] {message.text}"
         await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
         ans = await send_prompt(full_prompt)
-        await message.answer(str(ans))
+
+        if "error" in ans:
+            await message.answer(ans["error"])
+        else:
+            await message.answer(ans.get("url", "Картинка готова, но URL не получен"))
     else:
         logging.info(f"Текущая нейронка {user.current_neural_network}")
 
