@@ -4,8 +4,9 @@ server:
     context-path: /mj
 logging:
   level:
-    ROOT: info
     com.github.novicezk.midjourney: debug
+    javax.websocket: trace
+    io.netty: trace
 knife4j:
   enable: true
   openapi:
