@@ -249,7 +249,7 @@ async def simple_message_handler(message: Message):
         if "error" in ans:
             await message.answer(ans["error"])
         else:
-            await message.answer(ans.get("url", "Картинка готова, но URL не получен"))
+            await message.answer(str(ans))
     else:
         logging.info(f"Текущая нейронка {user.current_neural_network}")
 
