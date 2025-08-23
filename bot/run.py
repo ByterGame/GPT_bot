@@ -3,12 +3,12 @@ import pytz
 from create_bot import bot, dp, logger, scheduler
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from database.core import db
 from handlers.start_handler import start_router
 from handlers.commands_handler import command_router
 from handlers.message_for_network_handler import general_router
 from aiohttp import web
 from config import WEBHOOK_PATH, WEBHOOK_URL, PORT_BOT
-from database.core import db
 from planned_activities.reset_limits import reset_limits
 from neural_networks import MidJourney
 
