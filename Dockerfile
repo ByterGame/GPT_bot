@@ -22,7 +22,14 @@ RUN mvn clean package -DskipTests \
 FROM python:3.11-slim
 
 RUN apt-get update && \
-    apt-get install -y openjdk-17-jre-headless curl bash && \
+    apt-get install -y --no-install-recommends \
+       wget \
+       ca-certificates \
+       gnupg \
+       apt-transport-https \
+       curl \
+       bash && \
+    apt-get install -y openjdk-17-jre-headless && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
