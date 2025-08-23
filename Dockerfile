@@ -1,4 +1,4 @@
-FROM maven:3.8.5-openjdk-17 AS builder
+FROM maven:3.8.5-openjdk-21 AS builder
 
 ARG user=spring
 ARG group=spring
@@ -14,22 +14,26 @@ USER ${user}
 WORKDIR $SPRING_HOME
 
 COPY midjourney-proxy/ ./
+
 RUN mvn clean package -DskipTests \
     && mv target/midjourney-proxy-*.jar ./app.jar \
     && rm -rf target
 
-
 FROM python:3.11
 
 RUN apt-get update && \
-    apt-get install -y openjdk-17-jre-headless curl bash && \
+    apt-get install -y openjdk-21-jre curl bash && \
     rm -rf /var/lib/apt/lists/*
+
+RUN ln -sf /usr/bin/python3 /usr/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/bin/pip
 
 WORKDIR /app
 RUN mkdir -p /app/logs
 
 COPY bot/ ./bot/
-COPY bot/requirements.txt .
+COPY bot/requirements.txt ./
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --from=builder /home/spring/app.jar /app/midjourney-proxy.jar
@@ -39,10 +43,13 @@ RUN chmod +x start.sh
 
 EXPOSE 8080 10000
 
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=85 -Djava.awt.headless=true -XX:+HeapDumpOnOutOfMemoryError \
- -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -Xlog:gc:file=/app/logs/gc.log \
- -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9876 -Dcom.sun.management.jmxremote.ssl=false \
- -Dcom.sun.management.jmxremote.authenticate=false -Dlogging.file.path=/app/logs \
- -Dserver.port=8080 -Duser.timezone=Asia/Shanghai"
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=85 -Djava.awt.headless=true \
+    -XX:+HeapDumpOnOutOfMemoryError -XX:MaxGCPauseMillis=20 \
+    -XX:InitiatingHeapOccupancyPercent=35 -Xlog:gc:file=/app/logs/gc.log \
+    -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9876 \
+    -Dcom.sun.management.jmxremote.ssl=false \
+    -Dcom.sun.management.jmxremote.authenticate=false \
+    -Dlogging.file.path=/app/logs -Dserver.port=8080 \
+    -Duser.timezone=Asia/Shanghai"
 
 ENTRYPOINT ["bash", "./start.sh"]
