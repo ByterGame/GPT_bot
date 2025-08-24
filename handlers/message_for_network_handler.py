@@ -245,11 +245,11 @@ async def simple_message_handler(message: Message):
         proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
         ans = await generate_image(message.text, message.from_user.id)
 
-        if "task_id" in ans:
-            await message.answer(f"task_id: {ans["task_id"]}")
-            await proc_msg.delete()
-        else:
-            await message.answer(str(ans))
+        # if "task_id" in ans:
+        #     await message.answer(f"task_id: {ans["task_id"]}")
+        #     await proc_msg.delete()
+        # else:
+        #     await message.answer(str(ans))
     else:
         logging.info(f"Текущая нейронка {user.current_neural_network}")
 
