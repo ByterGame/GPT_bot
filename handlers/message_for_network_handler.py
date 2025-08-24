@@ -4,7 +4,7 @@ import os
 from aiogram import Router, F
 from aiogram.types import Message
 from neural_networks import gpt 
-from neural_networks.MidJourney import send_prompt
+from neural_networks.MidJourney import generate_image
 from database.core import db
 from datetime import datetime
 from create_bot import bot
@@ -243,7 +243,7 @@ async def simple_message_handler(message: Message):
         
         
         proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
-        ans = await send_prompt(message.text, message.from_user.id)
+        ans = await generate_image(message.text, message.from_user.id)
 
         if "task_id" in ans:
             await message.answer(f"task_id: {ans["task_id"]}")
