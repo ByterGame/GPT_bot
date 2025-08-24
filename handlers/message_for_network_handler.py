@@ -242,7 +242,7 @@ async def simple_message_handler(message: Message):
             return
         
         
-        proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
+        proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
         ans = await generate_image(message.text, message.from_user.id)
 
         # if "task_id" in ans:

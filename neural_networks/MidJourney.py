@@ -9,7 +9,7 @@ from aiogram.types import InputFile
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-POLL_INTERVAL = 10
+POLL_INTERVAL = 15
 
 
 async def send_prompt(prompt: str, user_id: int):
@@ -52,18 +52,6 @@ async def send_prompt(prompt: str, user_id: int):
             return {"task_id": task_id}
 
 
-async def download_image(image_url):
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(image_url) as response:
-                if response.status == 200:
-                    image_data = await response.read()
-                    return io.BytesIO(image_data)
-    except Exception as e:
-        logger.error(f"Ошибка загрузки изображения: {e}")
-    return None
-
-
 async def poll_task(task_id: str, user_id: int):
     logger.info(f"[poll_task] Начало опроса задачи task_id={task_id} для user_id={user_id}")
     url = f"https://api.goapi.ai/api/v1/task/{task_id}"
@@ -88,21 +76,11 @@ async def poll_task(task_id: str, user_id: int):
 
                 if status in ("finished", "success", "completed"):
                     image_url = output.get("image_url")
-                    if image_url:
-                        await bot.send_message(user_id, f"Твое фото готово, забрать его в изначальном качестве можешь по этому адресу\n\n{image_url}")
-                    image_file = await download_image(image_url)
+           
                     if user_id and image_url:
                         logger.info(f"[poll_task] Задача завершена, отправка изображения пользователю {user_id}")
                         try:
-                            if image_file:
-                                image_file.seek(0)
-                                await bot.send_photo(
-                                    chat_id=user_id, 
-                                    photo=InputFile(image_file, filename="image.png")
-                                )
-                            else:
-                                logger.error("Не удалось загрузить изображение")
-                                await bot.send_message(user_id, "Не удалось загрузить сгенерированное изображение")
+                            await bot.send_message(user_id, f"Твое фото готово, забрать его в изначальном качестве можешь по этому адресу\n\n{image_url}")
                         except Exception as e:
                             logger.error(f"[poll_task] Ошибка при отправке фото: {e}")
                     return
