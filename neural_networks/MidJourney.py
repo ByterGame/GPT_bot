@@ -40,7 +40,7 @@ async def send_prompt(prompt: str, user_id: int):
 
     task_id = data.get("data", {}).get("task_id")
     if not task_id:
-        return {"error": "Не удалось получить task_id"}
+        return {"error": "Не удалось получить task_id", "data": data}
 
     return {"task_id": task_id}
 
