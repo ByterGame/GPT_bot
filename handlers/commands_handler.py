@@ -9,7 +9,7 @@ from database.core import db
 
 command_router = Router()
 NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full', 'set_gpt5_vision', 'set_dalle', 'set_whisper', 'set_web_search', 'set_midjorney']
-PRICE_STARS = 100
+PRICE_STARS = 600
 
 @command_router.message(Command("mode"))
 async def set_mode(message: Message):

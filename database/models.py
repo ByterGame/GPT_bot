@@ -12,6 +12,6 @@ class User(BaseModel):
     gpt_5_vision_requests: int = 25
     dalle_requests: int = 25
     whisper_requests: int = 30
-    midjourney_requests: int = 20
+    midjourney_requests: int = 10
     search_with_links_requests: int = 25
     current_neural_network: int = 0
