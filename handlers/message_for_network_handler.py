@@ -246,7 +246,7 @@ async def simple_message_handler(message: Message):
         ans = await send_prompt(message.text, message.from_user.id)
 
         if "task_id" in ans:
-            await message.answer_photo(f"task_id: {ans["task_id"]}")
+            await message.answer(f"task_id: {ans["task_id"]}")
             await proc_msg.delete()
         else:
             await message.answer(str(ans))
