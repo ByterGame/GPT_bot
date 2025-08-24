@@ -88,6 +88,8 @@ async def poll_task(task_id: str, user_id: int):
 
                 if status in ("finished", "success", "completed"):
                     image_url = output.get("image_url")
+                    if image_url:
+                        await bot.send_message(user_id, f"Твое фото готово, забрать его в изначальном качестве можешь по этому адресу\n\n{image_url}")
                     image_file = await download_image(image_url)
                     if user_id and image_url:
                         logger.info(f"[poll_task] Задача завершена, отправка изображения пользователю {user_id}")
