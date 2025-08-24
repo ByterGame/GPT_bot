@@ -53,7 +53,7 @@ async def main():
     webhook_requests_handler.register(app, path="/webhook")
     app.router.add_post("/mj_webhook", mj_webhook)
     # setup_application(app, dp, bot=bot)
-
+    await on_startup()
     runner = web.AppRunner(app)
     await runner.setup()
 
