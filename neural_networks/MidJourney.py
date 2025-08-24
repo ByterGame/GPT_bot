@@ -1,4 +1,4 @@
-import requests
+import aiohttp
 from config import MJ_KEY, SECRET_TOKEN
 from create_bot import bot
 from aiohttp import web
@@ -32,17 +32,19 @@ async def send_prompt(prompt: str, user_id: int):
         }
     }
 
-    resp = requests.post(url, headers=headers, json=payload)
-    if not resp:
-        return {"error": f"resp: {resp} is empty"}
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers, json=payload) as resp:
+            
+            # if not resp:
+            #     return {"error": f"resp: {resp} is empty"}
 
-    data = resp.json()
+            data = await resp.json()
 
-    task_id = data.get("data", {}).get("task_id")
-    if not task_id:
-        return {"error": "Не удалось получить task_id", "data": data}
+            task_id = data.get("data", {}).get("task_id")
+            if not task_id:
+                return {"error": "Не удалось получить task_id", "data": data}
 
-    return {"task_id": task_id}
+            return {"task_id": task_id}
 
 
 

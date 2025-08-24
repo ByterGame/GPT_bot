@@ -41,7 +41,6 @@ async def main():
     )
 
     app = web.Application()
-    app.router.add_post("/mj_webhook", mj_webhook)
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
@@ -51,8 +50,9 @@ async def main():
         handle_inline_query=True,
     )
 
-    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-    setup_application(app, dp, bot=bot)
+    webhook_requests_handler.register(app, path="/webhook")
+    app.router.add_post("/mj_webhook", mj_webhook)
+    # setup_application(app, dp, bot=bot)
 
     runner = web.AppRunner(app)
     await runner.setup()
