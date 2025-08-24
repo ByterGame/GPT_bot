@@ -241,15 +241,14 @@ async def simple_message_handler(message: Message):
             await message.answer("Для анализа изображений выбери gpt5 vision")
             return
         
-        tg_id = message.chat.id
-        full_prompt = f"[tg:{tg_id}] {message.text}"
+        
         await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
-        ans = await send_prompt(full_prompt, message.from_user.id)
+        ans = await send_prompt(message.text, message.from_user.id)
 
         if "image_url" in ans:
             await message.answer_photo(ans["image_url"])
         else:
-            await message.answer(ans)
+            await message.answer(str(ans))
     else:
         logging.info(f"Текущая нейронка {user.current_neural_network}")
 
