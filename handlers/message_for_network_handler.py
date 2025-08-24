@@ -242,11 +242,12 @@ async def simple_message_handler(message: Message):
             return
         
         
-        await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
+        proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
         ans = await send_prompt(message.text, message.from_user.id)
 
-        if "image_url" in ans:
+        if "task_id" in ans:
             await message.answer_photo(ans["image_url"])
+            await proc_msg.delete()
         else:
             await message.answer(str(ans))
     else:
