@@ -10,7 +10,7 @@ from handlers.message_for_network_handler import general_router
 from aiohttp import web
 from config import WEBHOOK_PATH, WEBHOOK_URL, PORT_BOT
 from planned_activities.reset_limits import reset_limits
-from neural_networks import MidJourney
+from neural_networks.MidJourney import mj_webhook
 
 
 async def on_startup():
@@ -41,6 +41,7 @@ async def main():
     )
 
     app = web.Application()
+    app.router.add_post("/mj_webhook", mj_webhook)
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
@@ -62,7 +63,6 @@ async def main():
     try:
         await site.start()
         logger.info(f"Бот успешно запущен на порту {port}. URL: {WEBHOOK_URL}")
-        # asyncio.create_task(MidJourney.start_discord())
         await asyncio.Event().wait()
     finally:
         scheduler.shutdown()

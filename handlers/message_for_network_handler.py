@@ -244,12 +244,12 @@ async def simple_message_handler(message: Message):
         tg_id = message.chat.id
         full_prompt = f"[tg:{tg_id}] {message.text}"
         await message.answer("⏳ Отправил запрос в MidJourney, жди картинку...")
-        ans = await send_prompt(full_prompt)
+        ans = await send_prompt(full_prompt, message.from_user.id)
 
-        if "error" in ans:
-            await message.answer(ans["error"])
+        if "image_url" in ans:
+            await message.answer_photo(ans["image_url"])
         else:
-            await message.answer(str(ans))
+            await message.answer("Что-то пошло не так 😔")
     else:
         logging.info(f"Текущая нейронка {user.current_neural_network}")
 
