@@ -10,7 +10,7 @@ from handlers.message_for_network_handler import general_router
 from aiohttp import web
 from config import WEBHOOK_PATH, WEBHOOK_URL, PORT_BOT
 from planned_activities.reset_limits import reset_limits
-from neural_networks.MidJourney import mj_webhook
+from neural_networks import MidJourney
 
 
 async def on_startup():
@@ -50,10 +50,9 @@ async def main():
         handle_inline_query=True,
     )
 
-    webhook_requests_handler.register(app, path="/webhook")
-    app.router.add_post("/mj_webhook", mj_webhook)
-    # setup_application(app, dp, bot=bot)
-    await on_startup()
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+    setup_application(app, dp, bot=bot)
+
     runner = web.AppRunner(app)
     await runner.setup()
 

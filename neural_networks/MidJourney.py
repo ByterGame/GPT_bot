@@ -1,7 +1,10 @@
+import asyncio
 import aiohttp
-from config import MJ_KEY, SECRET_TOKEN
 from create_bot import bot
-from aiohttp import web
+from config import MJ_KEY
+
+
+POLL_INTERVAL = 10
 
 
 async def send_prompt(prompt: str, user_id: int):
@@ -20,13 +23,6 @@ async def send_prompt(prompt: str, user_id: int):
             "skip_prompt_check": True,
             "bot_id": 0
         },
-        "config": {
-            "service_mode": "",
-            "webhook_config": {
-                "endpoint": "https://GPT_Klon_ai.onrender.com/mj_webhook",
-                "secret": SECRET_TOKEN
-            }
-        },
         "metadata": {
             "user_id": user_id
         }
@@ -34,37 +30,44 @@ async def send_prompt(prompt: str, user_id: int):
 
     async with aiohttp.ClientSession() as session:
         async with session.post(url, headers=headers, json=payload) as resp:
-            
-            # if not resp:
-            #     return {"error": f"resp: {resp} is empty"}
-
             data = await resp.json()
-
             task_id = data.get("data", {}).get("task_id")
             if not task_id:
                 return {"error": "Не удалось получить task_id", "data": data}
-
             return {"task_id": task_id}
 
 
+async def poll_task(task_id: str, user_id: int):
+    url = f"https://api.goapi.ai/api/v1/task/{task_id}"
+    headers = {
+        "X-API-KEY": MJ_KEY,
+        "Content-Type": "application/json"
+    }
 
-async def mj_webhook(request: web.Request):
-    body = await request.json()
+    async with aiohttp.ClientSession() as session:
+        while True:
+            async with session.get(url, headers=headers) as resp:
+                data = await resp.json()
+                status = data.get("data", {}).get("status")
+                output = data.get("data", {}).get("output", {})
 
-    if body.get("secret") != SECRET_TOKEN:
-        return web.json_response({"error": "Invalid secret"}, status=403)
+                if status in ("finished", "success", "completed"):
+                    image_url = output.get("image_url")
+                    if user_id and image_url:
+                        await bot.send_photo(chat_id=user_id, photo=image_url)
+                    return
 
-    data = body.get("data", {})
-    status = data.get("status")
-    output = data.get("output", {})
+                elif status in ("failed", "cancelled"):
+                    await bot.send_message(chat_id=user_id, text="Не удалось сгенерировать изображение 😢")
+                    return
 
-    if status in ("finished", "success", "completed"):
-        image_url = output.get("image_url")
-        user_id = data.get("metadata", {}).get("user_id")
+            await asyncio.sleep(POLL_INTERVAL)
 
-        if user_id and image_url:
-            await bot.send_photo(chat_id=user_id, photo=image_url)
 
-        return web.json_response({"message": "ok"})
-
-    return web.json_response({"message": f"status={status}"})
+async def generate_image(prompt: str, user_id: int):
+    result = await send_prompt(prompt, user_id)
+    if "error" in result:
+        await bot.send_message(chat_id=user_id, text="Ошибка при создании задачи.")
+        return
+    task_id = result["task_id"]
+    await poll_task(task_id, user_id)
