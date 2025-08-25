@@ -15,7 +15,7 @@ def set_mode_kb():
 
 def pay_bonus_kb():
     kb_list = [
-        InlineKeyboardButton(text="Получить подписку в подарок", callback_data="pay_bonus_sub")
+        [InlineKeyboardButton(text="Получить подписку в подарок", callback_data="pay_bonus_sub")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
@@ -23,8 +23,8 @@ def pay_bonus_kb():
 
 def kb_with_bonus_channel():
     kb_list = [
-        InlineKeyboardButton(text="Канал, на который надо подписаться", url=f"https://{BONUS_CHANNEL_LINK}"),
-        InlineKeyboardButton(text="Проверить подписку", callback_data="check_bonus_sub")
+        [InlineKeyboardButton(text="Канал, на который надо подписаться", url=f"https://{BONUS_CHANNEL_LINK}")],
+        [InlineKeyboardButton(text="Проверить подписку", callback_data="check_bonus_sub")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard

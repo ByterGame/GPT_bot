@@ -101,7 +101,7 @@ async def let_bonus_sub(call: CallbackQuery):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
     if user.with_bonus:
-        await call.message.answer("Кажется, вы уже получили бонус за подписку на текущий канал.")
+        await call.message.answer("Кажется, вы уже получили бонус за подписку на канал.")
         return
     await call.message.answer(BONUS_TEXT, reply_markup=kb_with_bonus_channel())
     
