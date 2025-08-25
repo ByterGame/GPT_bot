@@ -36,7 +36,7 @@ async def main():
         reset_limits,
         'cron',
         hour=7,
-        minute=45,
+        minute=52,
         timezone=pytz.timezone('Europe/Moscow')
     )
 

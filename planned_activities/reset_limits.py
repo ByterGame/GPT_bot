@@ -1,5 +1,6 @@
 from database.core import db
 from database.models import User
+import json
 from config import DEFAULT_GPT5_VISION_LIMIT, DEFAULT_GPT_4O_LIMIT, DEFAULT_GPT_5_LIMIT, DALLE_LIMIT, WHISPER_LIMIT, MIDJOURNEY_LIMIT, SEARCH_WITH_LINKS_LIMIT
 
 
@@ -14,7 +15,7 @@ async def reset_limits():
         user = User(
             id=record['id'],
             end_subscription_day=record['end_subscription_day'],
-            context=record['context'],
+            context=json.loads(record['context']) if record['context'] else None,
             gpt_4o_mini_requests=DEFAULT_GPT_4O_LIMIT,
             gpt_5_requests=DEFAULT_GPT_5_LIMIT,
             gpt_5_vision_requests=DEFAULT_GPT5_VISION_LIMIT,

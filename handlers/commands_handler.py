@@ -130,19 +130,19 @@ async def let_profile_handler(message: Message):
 
 @command_router.message(Command("terms"))
 async def show_terms(message: Message):
-    await message.answer(TERMS_TEXT)
+    await message.answer(TERMS_TEXT, parse_mode="HTML")
 
 
 @command_router.message(Command("privacy"))
 async def show_privacy(message: Message):
-    await message.answer(PRIVACY_TEXT)
+    await message.answer(PRIVACY_TEXT, parse_mode="HTML")
 
 
 @command_router.message(Command("support"))
 async def show_support(message: Message):
-    await message.answer(SUPPORT_TEXT)
+    await message.answer(SUPPORT_TEXT, parse_mode="HTML")
 
 
 @command_router.message(Command("refund"))
 async def show_refund_policy(message: Message):
-    await message.answer(REFUND_TEXT)
+    await message.answer(REFUND_TEXT, parse_mode="HTML")
