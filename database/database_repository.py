@@ -52,7 +52,8 @@ class DatabaseRepository:
                     whisper_requests = record['whisper_requests'],
                     midjourney_requests = record['midjourney_requests'],
                     search_with_links_requests = record['search_with_links_requests'],
-                    current_neural_network=record['current_neural_network']
+                    current_neural_network=record['current_neural_network'],
+                    with_bonus=record['with_bonus']
                 )
             logging.warning(f"Пользователь с id={user_id} не найден в БД")
             return None
@@ -72,8 +73,9 @@ class DatabaseRepository:
             whisper_requests = $7,
             midjourney_requests = $8,
             search_with_links_requests = $9,
-            current_neural_network = $10
-        WHERE id = $11
+            current_neural_network = $10,
+            with_bonus = $11
+        WHERE id = $12
         """
         
         async with self.pool.acquire() as conn:
@@ -89,6 +91,7 @@ class DatabaseRepository:
                 user.midjourney_requests,
                 user.search_with_links_requests,
                 user.current_neural_network,
+                user.with_bonus,
                 user.id
             )
     

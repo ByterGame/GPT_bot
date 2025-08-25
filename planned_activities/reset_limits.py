@@ -22,6 +22,7 @@ async def reset_limits():
             dalle_requests=DALLE_LIMIT,
             whisper_requests=WHISPER_LIMIT,
             midjourney_requests=MIDJOURNEY_LIMIT,
-            search_with_links_requests=SEARCH_WITH_LINKS_LIMIT
+            search_with_links_requests=SEARCH_WITH_LINKS_LIMIT,
+            with_bonus=record['with_bonus']
         )
         await db_repo.update_user(user)

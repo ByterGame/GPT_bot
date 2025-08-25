@@ -3,12 +3,15 @@ from datetime import datetime,timedelta
 from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
-from keyboards.all_inline_kb import set_mode_kb, pay_kb
+from keyboards.all_inline_kb import set_mode_kb, pay_bonus_kb, kb_with_bonus_channel
 from database.core import db
+from create_bot import bot
+from aiogram.exceptions import TelegramBadRequest
 from config import (DEFAULT_GPT5_VISION_LIMIT, DEFAULT_GPT_4O_LIMIT, 
                     DEFAULT_GPT_5_LIMIT, DALLE_LIMIT, WHISPER_LIMIT, 
                     MIDJOURNEY_LIMIT, SEARCH_WITH_LINKS_LIMIT, 
-                    PRICE_STARS, TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT)
+                    PRICE_STARS, TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT,
+                    BONUS_TEXT, BONUS_CHANNEL_ID, BONUS_PERIOD)
 
 
 command_router = Router()
@@ -62,7 +65,7 @@ async def start_pay(message: Message):
         text += (f"Похоже у вас уже есть подписка, активная до {user.end_subscription_day.date()}\n"
                  f"Поэтому после оплаты ваша подписка просто продлится до {(user.end_subscription_day + timedelta(days=30)).date()}")
         
-    await message.answer(text)
+    await message.answer(text, reply_markup=pay_bonus_kb())
     await message.answer_invoice(
         title="Месячная подписка",
         description="Детали в сообщении выше",
@@ -91,6 +94,51 @@ async def successful_payment(message: Message):
     
     await db_repo.update_user(user)
     await message.answer(f"Спасибо за оплату! Ваша подписка активна до {user.end_subscription_day.date()}")
+
+
+@command_router.callback_query(F.data == "pay_bonus_sub")
+async def let_bonus_sub(call: CallbackQuery):
+    db_repo = await db.get_repository()
+    user = await db_repo.get_user(call.from_user.id)
+    if user.with_bonus:
+        await call.message.answer("Кажется, вы уже получили бонус за подписку на текущий канал.")
+        return
+    await call.message.answer(BONUS_TEXT, reply_markup=kb_with_bonus_channel())
+    
+@command_router.callback_query(F.data == "check_bonus_sub")
+async def check_bonus_sub(call: CallbackQuery):
+
+    try:
+        member = await bot.get_chat_member(
+            chat_id=BONUS_CHANNEL_ID,
+            user_id=call.from_user.id
+        )
+        
+        valid_statuses = [
+            'member', 'administrator', 'creator', 'restricted'
+        ]
+        
+        if member.status in valid_statuses:
+            await call.message.edit_text(
+                f"✅ Отлично! Вы подписаны. Сейчас добавим к вашей подписке {BONUS_PERIOD} дня!"
+            )
+            db_repo = await db.get_repository()
+            user = await db_repo.get_user(call.from_user.id)
+            user.end_subscription_day = (user.end_subscription_day + timedelta(days=int(BONUS_PERIOD)) 
+                                         if user.end_subscription_day.date() > datetime.now().date() 
+                                         else datetime.now() + timedelta(days=int(BONUS_PERIOD)))
+            await db_repo.update_user(user)
+            await call.message.answer(f"Ваша текущая подписка теперь действительна до {user.end_subscription_day.date()}")
+        else:
+            await call.message.answer("Похоже вы не подписаны на канал или ваши настройки приватности не позволяют проверить это")
+        
+    except TelegramBadRequest as e:
+        if "user not found" in str(e).lower() or "user not participant" in str(e).lower():
+            await call.message.answer("Похоже вы не подписаны на канал или ваши настройки приватности не позволяют проверить это")
+        raise e
+    except Exception as e:
+        print(f"Error checking subscription: {e}")
+        return False      
 
 
 @command_router.message(Command("clear_context"))

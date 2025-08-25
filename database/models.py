@@ -16,3 +16,4 @@ class User(BaseModel):
     midjourney_requests: int = MIDJOURNEY_LIMIT
     search_with_links_requests: int = SEARCH_WITH_LINKS_LIMIT
     current_neural_network: int = 0
+    with_bonus: bool = False
