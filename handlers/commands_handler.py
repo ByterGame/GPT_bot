@@ -128,6 +128,7 @@ async def check_bonus_sub(call: CallbackQuery):
             user.end_subscription_day = (user.end_subscription_day + timedelta(days=int(BONUS_PERIOD)) 
                                          if user.end_subscription_day.date() > datetime.now().date() 
                                          else datetime.now() + timedelta(days=int(BONUS_PERIOD)))
+            user.with_bonus = True
             await db_repo.update_user(user)
             await call.message.answer(f"Ваша текущая подписка теперь действительна до {user.end_subscription_day.date()}")
         else:
