@@ -98,6 +98,7 @@ async def successful_payment(message: Message):
 
 @command_router.callback_query(F.data == "pay_bonus_sub")
 async def let_bonus_sub(call: CallbackQuery):
+    await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
     if user.with_bonus:
@@ -107,7 +108,7 @@ async def let_bonus_sub(call: CallbackQuery):
     
 @command_router.callback_query(F.data == "check_bonus_sub")
 async def check_bonus_sub(call: CallbackQuery):
-
+    await call.answer()
     try:
         member = await bot.get_chat_member(
             chat_id=BONUS_CHANNEL_ID,
