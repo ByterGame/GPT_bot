@@ -74,7 +74,11 @@ async def set_commands():
         BotCommand(command="mode", description="Выбрать нейронку"),
         BotCommand(command="pay", description="Купить подписку"),
         BotCommand(command="profile", description="Профиль пользователя"),
-        BotCommand(command="clear_context", description="очищает контекст")
+        BotCommand(command="clear_context", description="очищает контекст"),
+        BotCommand(command="terms", description="Пользовательское соглашение"),
+        BotCommand(command="privacy", description="Политика конфиденциальности"),
+        BotCommand(command="support", description="Поддержка"),
+        BotCommand(command="refund", description="Политика возврата")
     ]
     await bot.set_my_commands(commands=commands, scope=BotCommandScopeDefault())
 

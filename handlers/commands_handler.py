@@ -5,21 +5,19 @@ from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
 from keyboards.all_inline_kb import set_mode_kb, pay_kb
 from database.core import db
+from config import (DEFAULT_GPT5_VISION_LIMIT, DEFAULT_GPT_4O_LIMIT, 
+                    DEFAULT_GPT_5_LIMIT, DALLE_LIMIT, WHISPER_LIMIT, 
+                    MIDJOURNEY_LIMIT, SEARCH_WITH_LINKS_LIMIT, 
+                    PRICE_STARS, TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT)
 
 
 command_router = Router()
 NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full', 'set_gpt5_vision', 'set_dalle', 'set_whisper', 'set_web_search', 'set_midjorney']
-PRICE_STARS = 600
+
 
 @command_router.message(Command("mode"))
 async def set_mode(message: Message):
-    await message.answer("Выбери нейронку, с которой хочешь продолжить общение", reply_markup=set_mode_kb())
-
-
-# @command_router.callback_query(F.data)
-# async def test_call(call: CallbackQuery):
-#     await call.answer()
-#     await call.message.answer(call.data)
+    await message.answer("Выбери нейросеть, с которой хочешь продолжить общение", reply_markup=set_mode_kb())
 
 
 @command_router.callback_query(F.data.in_(NEURAL_NETWORKS))
@@ -39,7 +37,7 @@ async def set_mode(call: CallbackQuery):
         await call.message.answer("Вы выбрали whisper! Просто отправь мне телеграм аудио или файл, а я верну тебе его текстовую расшифровку!")
     if neural_index == 5:
         await call.message.answer("Вы выбрали поиск с ссылками! Просто напишите свой запрос и ожидайте.")
-    await call.message.answer("Нейронка выбрана успешно!")
+    await call.message.answer("Нейросеть выбрана успешно!")
     user.current_neural_network = neural_index
     await db_repo.update_user(user)
 
@@ -52,9 +50,12 @@ async def start_pay(message: Message):
             f"Стоимость месячной подписки {PRICE_STARS} telegram stars\n"
             "Подписка предоставляет следующие преимущества:\n\n"
             "- gpt 4o mini - безлимит\n"
-            "- gpt 5 full - 50 запросов в день\n"
-            "- gpt 5 vision - 25 запросов в день\n"
-            "- DALL·E - 25 запросов в день\n\n")
+            f"- gpt 5 full - {DEFAULT_GPT_5_LIMIT} запросов в день\n"
+            f"- gpt 5 vision - {DEFAULT_GPT5_VISION_LIMIT} запросов в день\n"
+            f"- DALL·E - {DALLE_LIMIT} запросов в день\n"
+            f"- Whisper - {WHISPER_LIMIT} запросов в день\n"
+            f"- MidJourney - {MIDJOURNEY_LIMIT} запросов в день\n"
+            f"- Search with links - {SEARCH_WITH_LINKS_LIMIT} запросов в день\n\n")
     if user.end_subscription_day.date() <= datetime.now().date():
         text += (f"Похоже сейчас у вас нет активной подписки, поэтому после оплаты вы получите подписку до {(datetime.now() + timedelta(days=30)).date()}\n")
     else:
@@ -69,6 +70,7 @@ async def start_pay(message: Message):
         provider_token="",
         payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",
         currency="XTR",
+        start_parameter="subscription_{message.from_user.id}"
     )
 
 @command_router.pre_checkout_query()
@@ -110,12 +112,37 @@ async def let_profile_handler(message: Message):
     if user.end_subscription_day.date() <= datetime.now().date():
         text += ("Сейчас у вас нет активной подписки\n"
                  "Для оформления подписки используйте команду /pay\n\n"
-                 f"<b>Лимиты</b>:\ngpt 4o mini - осталось {user.gpt_4o_mini_requests}/30\n"
+                 f"<b>Лимиты</b>:\ngpt 4o mini - осталось {user.gpt_4o_mini_requests}/{DEFAULT_GPT_4O_LIMIT}\n"
                  f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date()} в 00:00 МСК")
     else:
         text += ("Сейчас у вас активна подписка\n\n"
                  f"<b>Лимиты</b>:\ngpt 4o mini - безлимитное использование\n"
-                 f"gpt 5 full - осталось {user.gpt_5_requests}/50\n"
+                 f"- gpt 5 full - осталось {user.gpt_5_requests}/{DEFAULT_GPT_5_LIMIT}\n"
+                 f"- gpt 5 vision - осталось {user.gpt_5_vision_requests}/{DEFAULT_GPT5_VISION_LIMIT}\n"
+                 f"- DALL·E - осталось {user.dalle_requests}/{DALLE_LIMIT}\n"
+                 f"- Whisper - осталось {user.whisper_requests}/{WHISPER_LIMIT}\n"
+                 f"- MidJourney - осталось {user.midjourney_requests}/{MIDJOURNEY_LIMIT}\n"
+                 f"- Search with links - осталось {user.search_with_links_requests}/{SEARCH_WITH_LINKS_LIMIT}.\n\n"
                  f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date()} в 00:00 МСК")
         
     await message.answer(text)
+
+
+@command_router.message(Command("terms"))
+async def show_terms(message: Message):
+    await message.answer(TERMS_TEXT)
+
+
+@command_router.message(Command("privacy"))
+async def show_privacy(message: Message):
+    await message.answer(PRIVACY_TEXT)
+
+
+@command_router.message(Command("support"))
+async def show_support(message: Message):
+    await message.answer(SUPPORT_TEXT)
+
+
+@command_router.message(Command("refund"))
+async def show_refund_policy(message: Message):
+    await message.answer(REFUND_TEXT)

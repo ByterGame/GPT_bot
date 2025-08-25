@@ -4,14 +4,15 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from database.core import db
 from database.models import User
+from config import START_MESSAGE
 
 
 start_router = Router()
 
 
 @start_router.message(CommandStart())
-async def start_bot(message: Message):
-    await message.answer("Бот успешно запущен!\n\nВоспользуйся командами из меню команд!")
+async def start_bot(message: Message):    
+    await message.answer(START_MESSAGE)
     db_repo = await db.get_repository()
     
     new_user = User(id=message.from_user.id)

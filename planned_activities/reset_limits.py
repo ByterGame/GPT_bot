@@ -1,13 +1,7 @@
 from database.core import db
 from database.models import User
+from config import DEFAULT_GPT5_VISION_LIMIT, DEFAULT_GPT_4O_LIMIT, DEFAULT_GPT_5_LIMIT, DALLE_LIMIT, WHISPER_LIMIT, MIDJOURNEY_LIMIT, SEARCH_WITH_LINKS_LIMIT
 
-DEFAULT_GPT_4O_LIMIT = 30
-DEFAULT_GPT_5_LIMIT = 50
-DEFAULT_GPT5_VISION_LIMIT = 25
-DALLE_LIMIT = 25
-WHISPER_LIMIT = 30
-MIDJOURNEY_LIMIT = 20
-SEARCH_WITH_LINKS_LIMIT = 25
 
 async def reset_limits():
     db_repo = await db.get_repository()

@@ -1,10 +1,9 @@
 import asyncio
 import aiohttp
 import logging
-import io
 from create_bot import bot
 from config import MJ_KEY
-from aiogram.types import InputFile
+from aiogram.types import Message
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -81,9 +80,10 @@ async def poll_task(task_id: str, user_id: int):
                         logger.info(f"[poll_task] Задача завершена, отправка изображения пользователю {user_id}")
                         try:
                             await bot.send_message(user_id, f"Твое фото готово, забрать его в изначальном качестве можешь по этому адресу\n\n{image_url}")
+                            return True
                         except Exception as e:
                             logger.error(f"[poll_task] Ошибка при отправке фото: {e}")
-                    return
+                    return False
 
                 elif status in ("failed", "cancelled"):
                     logger.warning(f"[poll_task] Задача завершилась с ошибкой (status={status}) для user_id={user_id}")
@@ -91,10 +91,11 @@ async def poll_task(task_id: str, user_id: int):
                         await bot.send_message(chat_id=user_id, text="Не удалось сгенерировать изображение 😢")
                     except Exception as e:
                         logger.error(f"[poll_task] Ошибка при отправке сообщения об ошибке: {e}")
-                    return
+                    return False
 
             logger.info(f"[poll_task] Задача еще не завершена, повтор через {POLL_INTERVAL} секунд...")
             await asyncio.sleep(POLL_INTERVAL)
+        
 
 
 async def generate_image(prompt: str, user_id: int):
@@ -102,7 +103,7 @@ async def generate_image(prompt: str, user_id: int):
     result = await send_prompt(prompt, user_id)
     if "error" in result:
         logger.error(f"[generate_image] Ошибка при создании задачи: {result}")
-        await bot.send_message(chat_id=user_id, text="Ошибка при создании задачи.")
-        return
+        return False
     task_id = result["task_id"]
-    await poll_task(task_id, user_id)
+    ans = await poll_task(task_id, user_id)
+    return ans

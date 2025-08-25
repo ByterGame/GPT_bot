@@ -244,12 +244,13 @@ async def simple_message_handler(message: Message):
         
         proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
         ans = await generate_image(message.text, message.from_user.id)
-
-        # if "task_id" in ans:
-        #     await message.answer(f"task_id: {ans["task_id"]}")
-        #     await proc_msg.delete()
-        # else:
-        #     await message.answer(str(ans))
+        if ans:
+            user.midjourney_requests -= 1
+            await proc_msg.delete()
+            await db_repo.update_user(user)
+        else:
+            await message.answer("Произошла ошибка, попробуйте позже!")
+            await proc_msg.delete()
     else:
         logging.info(f"Текущая нейронка {user.current_neural_network}")
 
