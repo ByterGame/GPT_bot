@@ -35,7 +35,7 @@ async def main():
     scheduler.add_job(
         reset_limits,
         'cron',
-        hour=8,
+        hour=00,
         minute=00,
         timezone=pytz.timezone('Europe/Moscow')
     )
