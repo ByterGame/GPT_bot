@@ -70,7 +70,7 @@ async def start_pay(message: Message):
         provider_token="",
         payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",
         currency="XTR",
-        start_parameter="subscription_{message.from_user.id}"
+        start_parameter=f"subscription_{message.from_user.id}"
     )
 
 @command_router.pre_checkout_query()
@@ -112,11 +112,11 @@ async def let_profile_handler(message: Message):
     if user.end_subscription_day.date() <= datetime.now().date():
         text += ("Сейчас у вас нет активной подписки\n"
                  "Для оформления подписки используйте команду /pay\n\n"
-                 f"<b>Лимиты</b>:\ngpt 4o mini - осталось {user.gpt_4o_mini_requests}/{DEFAULT_GPT_4O_LIMIT}\n"
+                 f"<b>Лимиты</b>:\n- gpt 4o mini - осталось {user.gpt_4o_mini_requests}/{DEFAULT_GPT_4O_LIMIT}\n"
                  f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date()} в 00:00 МСК")
     else:
         text += ("Сейчас у вас активна подписка\n\n"
-                 f"<b>Лимиты</b>:\ngpt 4o mini - безлимитное использование\n"
+                 f"<b>Лимиты</b>:\n- gpt 4o mini - безлимитное использование\n"
                  f"- gpt 5 full - осталось {user.gpt_5_requests}/{DEFAULT_GPT_5_LIMIT}\n"
                  f"- gpt 5 vision - осталось {user.gpt_5_vision_requests}/{DEFAULT_GPT5_VISION_LIMIT}\n"
                  f"- DALL·E - осталось {user.dalle_requests}/{DALLE_LIMIT}\n"
