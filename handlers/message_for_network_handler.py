@@ -65,9 +65,7 @@ async def handle_album(message: Message):
     if len(reply) < 4000:
         await messages[0].answer(reply)
     else:
-        chunks = split_text_by_sentences(reply)
-        for chunk in chunks:
-            await messages[0].answer(chunk)
+        await safe_send_message(message, reply)
     user.context = new_context
     await db_repo.update_user(user)
 
@@ -111,7 +109,7 @@ async def handle_audio_message(message: Message):
     if len(transcript) < 4000:
         await message.answer(transcript)
     else:
-        await safe_send_message(message, reply)
+        await safe_send_message(message, transcript)
 
     await processing_msg.delete()
 

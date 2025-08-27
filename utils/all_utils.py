@@ -40,13 +40,16 @@ class MixedContentParser:
                 attrs_str = f' href="{attrs["href"]}"'
             self.result.append(f"<{tag}{attrs_str}>")
         else:
-            if self.current_context and self.current_context[-1] == tag_lower:
-                self.current_context.pop()
-                if tag_lower == 'code':
-                    self.in_code_block = False
-                elif tag_lower == 'pre':
-                    self.in_pre_block = False
-                self.result.append(f"</{tag}>")
+            if tag_lower in self.current_context:
+                while self.current_context:
+                    current_tag = self.current_context.pop()
+                    self.result.append(f"</{current_tag}>")
+                    if current_tag == 'code':
+                        self.in_code_block = False
+                    elif current_tag == 'pre':
+                        self.in_pre_block = False
+                    if current_tag == tag_lower:
+                        break
         
         return True
     
@@ -121,29 +124,36 @@ class TagBalanceChecker(HTMLParser):
     def __init__(self):
         super().__init__()
         self.tags_stack = []
-        self.supported_tags_stack = []
     
     def handle_starttag(self, tag, attrs):
         tag_lower = tag.lower()
-        self.tags_stack.append(tag_lower)
         if tag_lower in SUPPORTED_TAGS:
-            self.supported_tags_stack.append(tag_lower)
+            self.tags_stack.append(tag_lower)
     
     def handle_endtag(self, tag):
         tag_lower = tag.lower()
         if self.tags_stack and self.tags_stack[-1] == tag_lower:
             self.tags_stack.pop()
-        if self.supported_tags_stack and self.supported_tags_stack[-1] == tag_lower:
-            self.supported_tags_stack.pop()
     
     def get_unclosed_tags(self):
         return self.tags_stack.copy()
-    
-    def get_unclosed_supported_tags(self):
-        return self.supported_tags_stack.copy()
+
+def validate_html(html: str) -> bool:
+    try:
+        parser = HTMLParser()
+        parser.feed(html)
+        return True
+    except:
+        return False
 
 def split_text_by_sentences(text: str, max_len: int = MAX_LEN):
     cleaned_text = clean_telegram_content(text)
+    
+    if not re.search(r'<[a-zA-Z][^>]*>', cleaned_text):
+        chunks = []
+        for i in range(0, len(cleaned_text), max_len):
+            chunks.append(cleaned_text[i:i+max_len])
+        return chunks
     
     sentences = re.split(r'(?<=[.!?])\s+', cleaned_text)
     chunks = []
@@ -157,12 +167,16 @@ def split_text_by_sentences(text: str, max_len: int = MAX_LEN):
         except:
             new_unclosed = []
         else:
-            new_unclosed = parser.get_unclosed_supported_tags()
+            new_unclosed = parser.get_unclosed_tags()
         
         if len(current_chunk) + len(sentence) + 1 > max_len:
             if tag_balance:
                 closed_chunk = current_chunk + ''.join(f'</{tag}>' for tag in reversed(tag_balance))
-                chunks.append(closed_chunk.strip())
+                if validate_html(closed_chunk):
+                    chunks.append(closed_chunk.strip())
+                else:
+                    chunks.append(re.sub(r'<[^>]*>', '', current_chunk).strip())
+                
                 next_chunk_open_tags = ''.join(f'<{tag}>' for tag in tag_balance)
                 current_chunk = next_chunk_open_tags + sentence
             else:
@@ -180,6 +194,30 @@ def split_text_by_sentences(text: str, max_len: int = MAX_LEN):
     if current_chunk:
         if tag_balance:
             current_chunk += ''.join(f'</{tag}>' for tag in reversed(tag_balance))
-        chunks.append(current_chunk.strip())
+        if validate_html(current_chunk):
+            chunks.append(current_chunk.strip())
+        else:
+            chunks.append(re.sub(r'<[^>]*>', '', current_chunk).strip())
     
     return chunks
+
+async def safe_send_message(message, text: str, max_len: int = MAX_LEN):
+    try:
+        chunks = split_text_by_sentences(text, max_len)
+        
+        for chunk in chunks:
+            parse_mode = 'HTML' if re.search(r'<[a-zA-Z][^>]*>', chunk) else None
+            
+            try:
+                await message.answer(chunk, parse_mode=parse_mode)
+            except Exception as e:
+                if 'parse entities' in str(e).lower():
+                    plain_text = re.sub(r'<[^>]*>', '', chunk)
+                    await message.answer(plain_text, parse_mode=None)
+                else:
+                    raise
+                    
+    except Exception as e:
+        plain_text = re.sub(r'<[^>]*>', '', text)
+        for i in range(0, len(plain_text), max_len):
+            await message.answer(plain_text[i:i+max_len], parse_mode=None)
