@@ -110,10 +110,48 @@ def parse_mixed_content(text: str) -> str:
     
     return parser.get_content()
 
+def clean_css_and_escape(text: str) -> str:
+    text = re.sub(r':root\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'body\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'\.\w+\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'header\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'footer\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'a\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'code\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'pre\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'table\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'th\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'td\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'figure\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'figcaption\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    text = re.sub(r'details\s*\{.*?\}\s*', '', text, flags=re.DOTALL)
+    
+    text = text.replace('\\-', '-')
+    text = text.replace('\\.', '.')
+    text = text.replace('\\:', ':')
+    text = text.replace('\\;', ';')
+    text = text.replace('\\{', '{')
+    text = text.replace('\\}', '}')
+    text = text.replace('\\#', '#')
+    text = text.replace('\\ ', ' ')
+    text = text.replace('\\>', '>')
+    
+    text = re.sub(r'var\([^)]*\)', '', text)
+    text = re.sub(r'#[0-9a-fA-F]{3,6}', '', text)
+    text = re.sub(r'\d*\.?\d+px', '', text)
+    text = re.sub(r'\d+%', '', text)
+    
+    text = re.sub(r'\s+', ' ', text)
+    text = text.strip()
+    
+    return text
+
 def clean_telegram_content(text: str) -> str:
     if not text or not text.strip():
         return text
     
+    text = clean_css_and_escape(text)
+
     text = re.sub(r'<!DOCTYPE[^>]*>', '', text, flags=re.IGNORECASE)
     text = re.sub(r'<\?xml[^>]*\?>', '', text, flags=re.IGNORECASE)
     text = re.sub(r'<!--.*?-->', '', text, flags=re.DOTALL)
