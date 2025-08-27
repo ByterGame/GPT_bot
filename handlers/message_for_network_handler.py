@@ -11,7 +11,7 @@ from create_bot import bot
 from config import BOT_TOKEN, GOOGLE_API_KEY, CX_ID
 from collections import defaultdict
 from asyncio import sleep
-from utils.all_utils import split_text_by_sentences
+from utils.all_utils import safe_send_message
 from database.models import User
 
 
@@ -111,10 +111,7 @@ async def handle_audio_message(message: Message):
     if len(transcript) < 4000:
         await message.answer(transcript)
     else:
-        from utils.all_utils import split_text_by_sentences
-        chunks = split_text_by_sentences(transcript)
-        for chunk in chunks:
-            await message.answer(chunk)
+        await safe_send_message(message, reply)
 
     await processing_msg.delete()
 
@@ -141,9 +138,7 @@ async def simple_message_handler(message: Message):
         if len(reply) < 4000:
             await message.answer(reply)
         else:
-            chunks = split_text_by_sentences(reply)
-            for chunk in chunks:
-                await message.answer(chunk)
+            await safe_send_message(message, reply)
         await processing_msg.delete()
         user.context = new_context
         await db_repo.update_user(user)
@@ -161,9 +156,7 @@ async def simple_message_handler(message: Message):
         if len(reply) < 4000:
             await message.answer(reply)
         else:
-            chunks = split_text_by_sentences(reply)
-            for chunk in chunks:
-                await message.answer(chunk)
+            await safe_send_message(message, reply)
         user.context = new_context
         await db_repo.update_user(user)
     elif user.current_neural_network == 2:
@@ -191,9 +184,7 @@ async def simple_message_handler(message: Message):
         if len(reply) < 4000:
             await message.answer(reply)
         else:
-            chunks = split_text_by_sentences(reply)
-            for chunk in chunks:
-                await message.answer(chunk)
+            await safe_send_message(message, reply)
         await processing_msg.delete()
         user.context = new_context
         await db_repo.update_user(user)
@@ -305,10 +296,7 @@ async def handle_search_with_links(message: Message, user: User):
     if len(reply) < 4000:
         await message.answer(reply)
     else:
-        from utils.all_utils import split_text_by_sentences
-        chunks = split_text_by_sentences(reply)
-        for chunk in chunks:
-            await message.answer(chunk)
+        await safe_send_message(message, reply)
 
     user.context = new_context
     user.search_with_links_requests -= 1
