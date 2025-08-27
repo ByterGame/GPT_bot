@@ -31,6 +31,7 @@ class GPT:
             )
             reply = response.choices[0].message.content
             context.append({"role": "assistant", "content": reply})
+            logging.info(reply)
             return (reply, context)
         except Exception as e:
             logging.error(f"Ошибка GPT 5 {e}")
