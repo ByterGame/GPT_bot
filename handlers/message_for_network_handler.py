@@ -252,7 +252,7 @@ async def simple_message_handler(message: Message):
             await message.answer("Ошибка при создании задачи")
             return 
         task_id = result["task_id"]
-        image_url = await poll_task(task_id)
+        image_url = await poll_task(task_id, message.from_user.id)
         if image_url:
             user.midjourney_requests -= 1
             photo_file = await download_photo(image_url, task_id)

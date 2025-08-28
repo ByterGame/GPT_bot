@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import logging
 from config import MJ_KEY
+from create_bot import bot
 
 
 logging.basicConfig(level=logging.INFO)
@@ -34,7 +35,7 @@ async def send_prompt(payload: dict):
             return {"task_id": task_id}
 
 
-async def poll_task(task_id: str):
+async def poll_task(task_id: str, user_id: int):
     url = f"https://api.goapi.ai/api/v1/task/{task_id}"
     headers = {
         "X-API-KEY": MJ_KEY,
@@ -42,7 +43,10 @@ async def poll_task(task_id: str):
     }
 
     async with aiohttp.ClientSession() as session:
+        i = 0
         while True:
+            if i % 4 == 0:
+                await bot.send_message(chat_id=user_id, text = "Похоже, что генерация занимает немного больше времени... От нас не зависит скорость работы MidJorney, поэтому просим еще немного подождать")
             async with session.get(url, headers=headers) as resp:
                 try:
                     data = await resp.json()
@@ -74,4 +78,5 @@ async def poll_task(task_id: str):
 
             logger.info(f"[poll_task] Задача еще не завершена, повтор через {POLL_INTERVAL} секунд...")
             await asyncio.sleep(POLL_INTERVAL)
+            i += 1
         

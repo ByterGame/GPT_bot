@@ -40,7 +40,7 @@ async def send_variation_request(message: Message, state: FSMContext):
         await message.answer("Ошибка при создании задачи")
         return 
     task_id = result["task_id"]
-    image_url = await poll_task(task_id)
+    image_url = await poll_task(task_id, message.from_user.id)
 
     if image_url:
         user.midjourney_requests -= 1
@@ -106,12 +106,12 @@ async def upscale_handler(call: CallbackQuery):
         await call.message.answer("Ошибка при создании задачи")
         return 
     task_id = result["task_id"]
-    image_url = await poll_task(task_id)
+    image_url = await poll_task(task_id, call.from_user.id)
 
     if image_url:
         photo_file = await download_photo(image_url, task_id)
         if photo_file:
-            await call.message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
+            await call.message.answer_photo(photo=photo_file)
         else:
             await call.message.answer((f"Кажется, что скачивание изображения занимает немного больше времени...\n"
                                        f"Вы можете посмотреть и скачать его сами в оригинальном качестве по ссылке\n{image_url}"))
