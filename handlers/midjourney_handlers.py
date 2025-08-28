@@ -50,6 +50,7 @@ async def send_variation_request(message: Message, state: FSMContext):
 
 @midjourney_router.callback_query(F.data.contains("variations"))
 async def variations_handler(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
     if user.midjourney_requests < 1 or user.end_subscription_day.date <= datetime.now().date():
@@ -69,6 +70,7 @@ async def variations_handler(call: CallbackQuery, state: FSMContext):
 
 @midjourney_router.callback_query(F.data.contains("upscale"))
 async def upscale_handler(call: CallbackQuery):
+    await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
     if user.end_subscription_day.date <= datetime.now().date():
