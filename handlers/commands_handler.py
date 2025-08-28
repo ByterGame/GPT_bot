@@ -210,4 +210,4 @@ async def cancel(message: Message, state: FSMContext):
 
 @command_router.message(Command("test"))
 async def test(message: Message):
-    await main("https://img.theapi.app/mj/b7a495f4-bfea-4e1b-8405-51e4c01071ef.png", 1335226579)
+    await main("https://img.theapi.app/mj/17f89940-fb9e-4ff1-a391-058b80c77fd6.png", 1335226579)
