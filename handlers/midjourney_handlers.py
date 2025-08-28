@@ -64,8 +64,8 @@ async def variations_handler(call: CallbackQuery, state: FSMContext):
     origin_task_id = data[1]
     index = data[0][-1]
     data = {
-        index: index,
-        origin_task_id: origin_task_id
+        "index": index,
+        "origin_task_id": origin_task_id
     }
     await state.set_data(data)
     await state.set_state(VariationsState.wait_prompt)
@@ -79,7 +79,7 @@ async def upscale_handler(call: CallbackQuery):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
     if user.end_subscription_day.date() <= datetime.now().date():
-        await call.message.answer("Кажется у вас закончилась подписка, вы всегда можете продлить ее использовав команду \pay")
+        await call.message.answer("Кажется у вас закончилась подписка, вы всегда можете продлить ее использовав команду /pay")
         return
     proc_msg = await call.message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
     data = call.data.split('-')
