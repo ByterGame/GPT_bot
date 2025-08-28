@@ -28,3 +28,15 @@ def kb_with_bonus_channel():
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
+
+
+def mj_kb(task_id: str):
+    kb_list = [
+        [InlineKeyboardButton(text="V1", callback_data=f"variations1-{task_id}"), InlineKeyboardButton(text="V2", callback_data=f"variations2-{task_id}")],
+        [InlineKeyboardButton(text="V3", callback_data=f"variations3-{task_id}"), InlineKeyboardButton(text="V4", callback_data=f"variations4-{task_id}")],
+        [InlineKeyboardButton(text="U1", callback_data=f"upscale1-{task_id}"), InlineKeyboardButton(text="U2", callback_data=f"upscale2-{task_id}")],
+        [InlineKeyboardButton(text="U3", callback_data=f"upscale3-{task_id}"), InlineKeyboardButton(text="U4", callback_data=f"upscale4-{task_id}")]
+    ]
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
+    return keyboard

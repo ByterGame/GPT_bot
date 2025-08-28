@@ -4,7 +4,7 @@ import os
 from aiogram import Router, F
 from aiogram.types import Message
 from neural_networks import gpt 
-from neural_networks.MidJourney import generate_image
+from neural_networks.MidJourney import send_prompt, poll_task
 from database.core import db
 from datetime import datetime
 from create_bot import bot
@@ -13,6 +13,8 @@ from collections import defaultdict
 from asyncio import sleep
 from utils.all_utils import safe_send_message
 from database.models import User
+from keyboards.all_inline_kb import mj_kb
+
 
 
 general_router = Router()
@@ -232,9 +234,29 @@ async def simple_message_handler(message: Message):
         
         
         proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
-        ans = await generate_image(message.text, message.from_user.id)
-        if ans:
+        
+        payload = {
+            "model": "midjourney",
+            "task_type": "imagine",
+            "input": {
+                "prompt": prompt,
+                "aspect_ratio": "16:9",
+                "process_mode": "mixed",
+                "skip_prompt_check": False,
+                "bot_id": 0
+            }
+        }
+        result = await send_prompt(payload)
+        if "error" in result:
+            logging.error(f"[generate_image] Ошибка при создании задачи: {result}")
+            await message.answer("Ошибка при создании задачи")
+            return 
+        task_id = result["task_id"]
+        image_url = await poll_task(task_id)
+        if image_url:
             user.midjourney_requests -= 1
+            await message.answer(f"Ваше изображение готово, посмотреть и скачать его в оригинальном качестве вы можете по ссылке\n{image_url}",
+                                 reply_markup=mj_kb(task_id))
             await proc_msg.delete()
             await db_repo.update_user(user)
         else:
