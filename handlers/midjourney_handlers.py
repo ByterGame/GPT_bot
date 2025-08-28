@@ -53,7 +53,7 @@ async def variations_handler(call: CallbackQuery, state: FSMContext):
     await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
-    if user.midjourney_requests < 1 or user.end_subscription_day.date <= datetime.now().date():
+    if user.midjourney_requests < 1 or user.end_subscription_day.date() <= datetime.now().date():
         await call.message.answer("Кажется у вас закончилась подписка или доступные запросы на сегодня.")
         return
     index, origin_task_id = call.data.split('-')
@@ -73,7 +73,7 @@ async def upscale_handler(call: CallbackQuery):
     await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
-    if user.end_subscription_day.date <= datetime.now().date():
+    if user.end_subscription_day.date() <= datetime.now().date():
         await call.message.answer("Кажется у вас закончилась подписка, вы всегда можете продлить ее использовав команду \pay")
         return
     proc_msg = await call.message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
