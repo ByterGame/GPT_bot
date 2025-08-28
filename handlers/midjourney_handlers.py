@@ -49,6 +49,7 @@ async def send_variation_request(message: Message, state: FSMContext):
     else:
         await message.answer("Произошла ошибка, попробуйте позже!")
 
+    await state.clear()
     await proc_msg.delete()
 
 

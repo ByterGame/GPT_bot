@@ -7,6 +7,7 @@ from keyboards.all_inline_kb import set_mode_kb, pay_bonus_kb, kb_with_bonus_cha
 from database.core import db
 from create_bot import bot
 from aiogram.exceptions import TelegramBadRequest
+from aiogram.fsm.context import FSMContext
 from config import (DEFAULT_GPT5_VISION_LIMIT, DEFAULT_GPT_4O_LIMIT, 
                     DEFAULT_GPT_5_LIMIT, DALLE_LIMIT, WHISPER_LIMIT, 
                     MIDJOURNEY_LIMIT, SEARCH_WITH_LINKS_LIMIT, 
@@ -196,3 +197,12 @@ async def show_support(message: Message):
 @command_router.message(Command("refund"))
 async def show_refund_policy(message: Message):
     await message.answer(REFUND_TEXT, parse_mode="HTML")
+
+
+@command_router.message(Command("cancel"))
+async def cancel(message: Message, state: FSMContext):
+    if state.get_state():
+        await state.clear()
+        await message.answer("Хорошо, скажи, если что-то понадобится!")
+    else:
+        await message.answer("Сейчас я ничего не ждал от тебя, можешь спокойно продолжать использование:)")
