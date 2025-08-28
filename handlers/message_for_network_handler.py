@@ -11,10 +11,10 @@ from create_bot import bot
 from config import BOT_TOKEN, GOOGLE_API_KEY, CX_ID
 from collections import defaultdict
 from asyncio import sleep
-from utils.all_utils import safe_send_message
+from utils.text_utils import safe_send_message
 from database.models import User
 from keyboards.all_inline_kb import mj_kb
-
+from utils.download_photo import download_photo
 
 
 general_router = Router()
@@ -255,8 +255,13 @@ async def simple_message_handler(message: Message):
         image_url = await poll_task(task_id)
         if image_url:
             user.midjourney_requests -= 1
-            await message.answer(f"Ваше изображение готово, посмотреть и скачать его в оригинальном качестве вы можете по ссылке\n{image_url}",
-                                 reply_markup=mj_kb(task_id))
+            photo_file = await download_photo(image_url, task_id)
+            if photo_file:
+                await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
+            else:
+                await message.answer((f"Кажется, что скачивание изображения занимает немного больше времени...\n"
+                                      f"Вы можете посмотреть и скачать его сами в оригинальном качестве по ссылке\n{image_url}"),
+                                        reply_markup=mj_kb(task_id))
             await proc_msg.delete()
             await db_repo.update_user(user)
         else:

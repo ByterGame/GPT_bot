@@ -8,7 +8,6 @@ from database.core import db
 from create_bot import bot
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from test import main
 from config import (DEFAULT_GPT5_VISION_LIMIT, DEFAULT_GPT_4O_LIMIT, 
                     DEFAULT_GPT_5_LIMIT, DALLE_LIMIT, WHISPER_LIMIT, 
                     MIDJOURNEY_LIMIT, SEARCH_WITH_LINKS_LIMIT, 
@@ -208,6 +207,3 @@ async def cancel(message: Message, state: FSMContext):
     else:
         await message.answer("Сейчас я ничего не ждал от тебя, можешь спокойно продолжать использование:)")
 
-@command_router.message(Command("test"))
-async def test(message: Message):
-    await main("https://img.theapi.app/mj/17f89940-fb9e-4ff1-a391-058b80c77fd6.png", 1335226579)

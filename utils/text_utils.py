@@ -1,6 +1,7 @@
 import re
 from html.parser import HTMLParser
 
+
 MAX_LEN = 4000
 
 SUPPORTED_TAGS = {

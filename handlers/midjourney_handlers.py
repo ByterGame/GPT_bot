@@ -7,6 +7,7 @@ from neural_networks.MidJourney import send_prompt, poll_task
 from database.core import db
 from datetime import datetime
 from keyboards.all_inline_kb import mj_kb
+from utils.download_photo import download_photo
 
 
 midjourney_router = Router()
@@ -43,8 +44,13 @@ async def send_variation_request(message: Message, state: FSMContext):
 
     if image_url:
         user.midjourney_requests -= 1
-        await message.answer(f"Ваше изображение готово, посмотреть и скачать его в оригинальном качестве вы можете по ссылке\n{image_url}",
-                                reply_markup=mj_kb(task_id))
+        photo_file = await download_photo(image_url, task_id)
+        if photo_file:
+            await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
+        else:
+            await message.answer((f"Кажется, что скачивание изображения занимает немного больше времени...\n"
+                                  f"Вы можете посмотреть и скачать его сами в оригинальном качестве по ссылке\n{image_url}"),
+                                    reply_markup=mj_kb(task_id))
         await db_repo.update_user(user)
     else:
         await message.answer("Произошла ошибка, попробуйте позже!")
@@ -103,7 +109,12 @@ async def upscale_handler(call: CallbackQuery):
     image_url = await poll_task(task_id)
 
     if image_url:
-        await call.message.answer(f"Ваше изображение готово, посмотреть и скачать его в оригинальном качестве вы можете по ссылке\n{image_url}")
+        photo_file = await download_photo(image_url, task_id)
+        if photo_file:
+            await call.message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
+        else:
+            await call.message.answer((f"Кажется, что скачивание изображения занимает немного больше времени...\n"
+                                       f"Вы можете посмотреть и скачать его сами в оригинальном качестве по ссылке\n{image_url}"))
         user.midjourney_requests -= 1
         await db_repo.update_user(user)
     else:
