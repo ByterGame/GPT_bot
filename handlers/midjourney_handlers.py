@@ -60,6 +60,7 @@ async def variations_handler(call: CallbackQuery, state: FSMContext):
     if user.midjourney_requests < 1 and user.end_subscription_day.date() <= datetime.now().date():
         await call.message.answer("Кажется у вас закончилась подписка или доступные запросы на сегодня.")
         return
+    logging.info(call.data)
     index, origin_task_id = call.data.split('-')
     index = index[-1]
     data = {
@@ -101,6 +102,8 @@ async def upscale_handler(call: CallbackQuery):
 
     if image_url:
         await call.message.answer(f"Ваше изображение готово, посмотреть и скачать его в оригинальном качестве вы можете по ссылке\n{image_url}")
+        user.midjourney_requests -= 1
+        await db_repo.update_user(user)
     else:
         await call.message.answer("Произошла ошибка, попробуйте позже!")
 
