@@ -239,7 +239,7 @@ async def simple_message_handler(message: Message):
             "model": "midjourney",
             "task_type": "imagine",
             "input": {
-                "prompt": prompt,
+                "prompt": message.text,
                 "aspect_ratio": "16:9",
                 "process_mode": "mixed",
                 "skip_prompt_check": False,
