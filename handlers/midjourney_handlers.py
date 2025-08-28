@@ -18,6 +18,8 @@ class VariationsState(StatesGroup):
 
 @midjourney_router.message(VariationsState.wait_prompt)
 async def send_variation_request(message: Message, state: FSMContext):
+    db_repo = await db.get_repository()
+    user = await db_repo.get_user(message.from_user.id)
     proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
     data = await state.get_data()
     payload = {
@@ -40,8 +42,10 @@ async def send_variation_request(message: Message, state: FSMContext):
     image_url = await poll_task(task_id)
 
     if image_url:
+        user.midjourney_requests -= 1
         await message.answer(f"Ваше изображение готово, посмотреть и скачать его в оригинальном качестве вы можете по ссылке\n{image_url}",
                                 reply_markup=mj_kb(task_id))
+        await db_repo.update_user(user)
     else:
         await message.answer("Произошла ошибка, попробуйте позже!")
 
@@ -53,7 +57,7 @@ async def variations_handler(call: CallbackQuery, state: FSMContext):
     await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
-    if user.midjourney_requests < 1 or user.end_subscription_day.date() <= datetime.now().date():
+    if user.midjourney_requests < 1 and user.end_subscription_day.date() <= datetime.now().date():
         await call.message.answer("Кажется у вас закончилась подписка или доступные запросы на сегодня.")
         return
     index, origin_task_id = call.data.split('-')
