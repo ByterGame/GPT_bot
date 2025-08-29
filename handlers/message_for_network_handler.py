@@ -1,6 +1,7 @@
 import logging
 import requests
 import os
+from openai import BadRequestError
 from aiogram import Router, F
 from aiogram.types import Message
 from neural_networks import gpt 
@@ -141,7 +142,7 @@ async def simple_message_handler(message: Message):
             user.gpt_4o_mini_requests -= 1
         try:
             reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
-        except Exception as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
+        except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
             await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
             user.context = None
             await db_repo.update_user(user)
