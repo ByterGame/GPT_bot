@@ -14,13 +14,20 @@ class GPT:
                 messages=context,
                 temperature=0.7
             )
+
+            if response.status_code != 200:
+                error_data = response.json()
+                if 'error' in error_data and error_data['error'].get('code') == 'invalid_image_url':
+                    raise Exception("invalid_image_url")
+                else:
+                    raise Exception(f"OpenAI API error: {error_data}")
             reply = response.choices[0].message.content
             context.append({"role": "assistant", "content": reply})
             return (reply, context)
 
         except Exception as e:
             logging.error(f"Ошибка GPT 4o mini {e}")
-            return (str(e), context)
+            raise e
         
     def chat_with_gpt5(self, message_text: str, context: Optional[List[Dict]]) -> str:
         try:
@@ -29,13 +36,19 @@ class GPT:
                 model="gpt-5",
                 messages=context
             )
+            if response.status_code != 200:
+                error_data = response.json()
+                if 'error' in error_data and error_data['error'].get('code') == 'invalid_image_url':
+                    raise Exception("invalid_image_url")
+                else:
+                    raise Exception(f"OpenAI API error: {error_data}")
             reply = response.choices[0].message.content
             context.append({"role": "assistant", "content": reply})
             logging.info(reply)
             return (reply, context)
         except Exception as e:
             logging.error(f"Ошибка GPT 5 {e}")
-            return (str(e), context)
+            raise e
         
     def chat_with_gpt5_vision(self, message_text: str, image_urls: Optional[str], context: Optional[List[Dict]]) -> Tuple:
         try:
@@ -55,14 +68,19 @@ class GPT:
                 model="gpt-5",
                 messages=context
             )
-
+            if response.status_code != 200:
+                error_data = response.json()
+                if 'error' in error_data and error_data['error'].get('code') == 'invalid_image_url':
+                    raise Exception("invalid_image_url")
+                else:
+                    raise Exception(f"OpenAI API error: {error_data}")
             reply = response.choices[0].message.content
             context.append({"role": "assistant", "content": reply})
             return (reply, context)
 
         except Exception as e:
             logging.error(f"Ошибка GPT 5 Vision {e}")
-            return (str(e), context)
+            raise e
         
     def generate_image_with_dalle(self, prompt: str, context: Optional[List[Dict]], size: str = "1024x1024", n: int = 1) -> Tuple:
         try:
@@ -73,6 +91,12 @@ class GPT:
                 size=size,
                 n=n
             )
+            if response.status_code != 200:
+                error_data = response.json()
+                if 'error' in error_data and error_data['error'].get('code') == 'invalid_image_url':
+                    raise Exception("invalid_image_url")
+                else:
+                    raise Exception(f"OpenAI API error: {error_data}")
             image_urls = [item.url for item in response.data]
             context.append({"role": "assistant", "content": image_urls})
             return (image_urls, context)
@@ -92,4 +116,4 @@ class GPT:
 
         except Exception as e:
             logging.error(f"Ошибка Whisper: {e}")
-            return str(e)
+            raise e
