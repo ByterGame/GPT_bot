@@ -11,7 +11,6 @@ from handlers.midjourney_handlers import midjourney_router
 from aiohttp import web
 from config import WEBHOOK_PATH, WEBHOOK_URL, PORT_BOT
 from planned_activities.reset_limits import reset_limits
-from neural_networks import MidJourney
 
 
 async def on_startup():

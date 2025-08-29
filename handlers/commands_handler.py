@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from datetime import datetime,timedelta
 from aiogram import Router, F
 from aiogram.filters import Command
@@ -76,6 +77,11 @@ async def start_pay(message: Message):
         currency="XTR",
         start_parameter=f"subscription_{message.from_user.id}"
     )
+
+    await asyncio.sleep(240)
+    user = await db_repo.get_user(message.from_user.id)
+    if user.end_subscription_day.data() <= datetime.now().data():
+        message.answer("Ты уже на полпути к оформлению подпиский! Я уверен, что смогу помочь тебе! Надеюсь ты продолжишь начатое!")
 
 @command_router.pre_checkout_query()
 async def pre_checkout(pre_checkout_query: PreCheckoutQuery):

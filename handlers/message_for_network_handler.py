@@ -57,12 +57,17 @@ async def handle_album(message: Message):
     user.gpt_5_vision_requests -= 1
 
     text = messages[0].caption or ""
-
-    reply, new_context = gpt.chat_with_gpt5_vision(
-        message_text=text,
-        image_urls=image_urls,
-        context=user.context if user.context else []
-    )
+    try:
+        reply, new_context = gpt.chat_with_gpt5_vision(
+            message_text=text,
+            image_urls=image_urls,
+            context=user.context if user.context else []
+        )
+    except Exception as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
+            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            user.context = None
+            await db_repo.update_user(user)
+            return
 
     if len(reply) < 4000:
         await messages[0].answer(reply)
@@ -134,7 +139,13 @@ async def simple_message_handler(message: Message):
         
         if user.end_subscription_day.date() <= datetime.now().date():
             user.gpt_4o_mini_requests -= 1
-        reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
+        try:
+            reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
+        except Exception as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
+            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            user.context = None
+            await db_repo.update_user(user)
+            return
         if len(reply) < 4000:
             await message.answer(reply)
         else:
@@ -152,7 +163,13 @@ async def simple_message_handler(message: Message):
             return
         processing_msg = await message.answer("Думаю над твоим вопросом...")
         user.gpt_5_requests -= 1
-        reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
+        try:
+            reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
+        except Exception as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
+            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            user.context = None
+            await db_repo.update_user(user)
+            return
         if len(reply) < 4000:
             await message.answer(reply)
         else:
@@ -174,12 +191,17 @@ async def simple_message_handler(message: Message):
             image_url.append(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}")
 
         user.gpt_5_vision_requests -= 1
-
-        reply, new_context = gpt.chat_with_gpt5_vision(
-            message_text=message.caption if message.caption else message.text,
-            image_urls=image_url,
-            context=user.context if user.context else []
-        )
+        try:
+            reply, new_context = gpt.chat_with_gpt5_vision(
+                message_text=message.caption if message.caption else message.text,
+                image_urls=image_url,
+                context=user.context if user.context else []
+            )
+        except Exception as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
+            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            user.context = None
+            await db_repo.update_user(user)
+            return
 
         if len(reply) < 4000:
             await message.answer(reply)
@@ -203,11 +225,16 @@ async def simple_message_handler(message: Message):
         user.dalle_requests -= 1
 
         prompt = message.caption if message.caption else message.text
-
-        image_urls, new_context = gpt.generate_image_with_dalle(
-            prompt=prompt,
-            context=user.context if user.context else []
-        )
+        try:
+            image_urls, new_context = gpt.generate_image_with_dalle(
+                prompt=prompt,
+                context=user.context if user.context else []
+            )
+        except Exception as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
+            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            user.context = None
+            await db_repo.update_user(user)
+            return
 
         if image_urls:
             for url in image_urls:
@@ -321,11 +348,16 @@ async def handle_search_with_links(message: Message, user: User):
         prompt += f"{i}. {src['title']}: {src['url']}\n"
 
     prompt += "\nСделай краткий и понятный ответ с ссылками на источники."
-
-    reply, new_context = gpt.chat_with_gpt4o_mini(
-        message_text=prompt,
-        context=user.context if user.context else []
-    )
+    try:
+        reply, new_context = gpt.chat_with_gpt4o_mini(
+            message_text=prompt,
+            context=user.context if user.context else []
+        )
+    except Exception as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
+            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            user.context = None
+            await db_repo.update_user(user)
+            return
 
     if len(reply) < 4000:
         await message.answer(reply)
