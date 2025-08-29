@@ -15,12 +15,6 @@ class GPT:
                 temperature=0.7
             )
 
-            if response.status_code != 200:
-                error_data = response.json()
-                if 'error' in error_data and error_data['error'].get('code') == 'invalid_image_url':
-                    raise Exception("invalid_image_url")
-                else:
-                    raise Exception(f"OpenAI API error: {error_data}")
             reply = response.choices[0].message.content
             context.append({"role": "assistant", "content": reply})
             return (reply, context)
@@ -36,12 +30,7 @@ class GPT:
                 model="gpt-5",
                 messages=context
             )
-            if response.status_code != 200:
-                error_data = response.json()
-                if 'error' in error_data and error_data['error'].get('code') == 'invalid_image_url':
-                    raise Exception("invalid_image_url")
-                else:
-                    raise Exception(f"OpenAI API error: {error_data}")
+            
             reply = response.choices[0].message.content
             context.append({"role": "assistant", "content": reply})
             logging.info(reply)
@@ -68,12 +57,7 @@ class GPT:
                 model="gpt-5",
                 messages=context
             )
-            if response.status_code != 200:
-                error_data = response.json()
-                if 'error' in error_data and error_data['error'].get('code') == 'invalid_image_url':
-                    raise Exception("invalid_image_url")
-                else:
-                    raise Exception(f"OpenAI API error: {error_data}")
+            
             reply = response.choices[0].message.content
             context.append({"role": "assistant", "content": reply})
             return (reply, context)
@@ -91,12 +75,7 @@ class GPT:
                 size=size,
                 n=n
             )
-            if response.status_code != 200:
-                error_data = response.json()
-                if 'error' in error_data and error_data['error'].get('code') == 'invalid_image_url':
-                    raise Exception("invalid_image_url")
-                else:
-                    raise Exception(f"OpenAI API error: {error_data}")
+            
             image_urls = [item.url for item in response.data]
             context.append({"role": "assistant", "content": image_urls})
             return (image_urls, context)
