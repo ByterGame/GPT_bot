@@ -9,7 +9,7 @@ from neural_networks.MidJourney import send_prompt, poll_task
 from database.core import db
 from datetime import datetime
 from create_bot import bot
-from config import BOT_TOKEN, GOOGLE_API_KEY, CX_ID
+from config import BOT_TOKEN, GOOGLE_API_KEY, CX_ID, DEFAULT_PROMPT
 from collections import defaultdict
 from asyncio import sleep
 from utils.text_utils import safe_send_message
@@ -66,7 +66,7 @@ async def handle_album(message: Message):
         )
     except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
             await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
-            user.context = None
+            user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
 
@@ -144,7 +144,7 @@ async def simple_message_handler(message: Message):
             reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
         except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
             await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
-            user.context = None
+            user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
         if len(reply) < 4000:
@@ -168,7 +168,7 @@ async def simple_message_handler(message: Message):
             reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
         except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
             await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
-            user.context = None
+            user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
         if len(reply) < 4000:
@@ -200,7 +200,7 @@ async def simple_message_handler(message: Message):
             )
         except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
             await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
-            user.context = None
+            user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
 
@@ -233,7 +233,7 @@ async def simple_message_handler(message: Message):
             )
         except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
             await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
-            user.context = None
+            user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
 
@@ -356,7 +356,7 @@ async def handle_search_with_links(message: Message, user: User):
         )
     except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
             await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
-            user.context = None
+            user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
 

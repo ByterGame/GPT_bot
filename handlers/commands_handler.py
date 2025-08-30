@@ -13,7 +13,7 @@ from config import (DEFAULT_GPT5_VISION_LIMIT, DEFAULT_GPT_4O_LIMIT,
                     DEFAULT_GPT_5_LIMIT, DALLE_LIMIT, WHISPER_LIMIT, 
                     MIDJOURNEY_LIMIT, SEARCH_WITH_LINKS_LIMIT, 
                     PRICE_STARS, TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT,
-                    BONUS_TEXT, BONUS_CHANNEL_ID, BONUS_PERIOD)
+                    BONUS_TEXT, BONUS_CHANNEL_ID, BONUS_PERIOD, DEFAULT_PROMPT)
 
 
 command_router = Router()
@@ -154,7 +154,7 @@ async def check_bonus_sub(call: CallbackQuery):
 async def clear_context(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
-    user.context = None
+    user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
     await db_repo.update_user(user)
     await message.answer("Контекст очищен!")
 
