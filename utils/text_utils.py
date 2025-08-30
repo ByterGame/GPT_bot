@@ -1,7 +1,9 @@
 import re
+import logging
 from html import escape as html_escape
 from html.parser import HTMLParser
 from typing import List
+from aiogram.exceptions import TelegramBadRequest
 
 
 ALLOWED_TAGS = {
@@ -169,19 +171,66 @@ def split_html_for_telegram(html: str, limit: int = 4000) -> List[str]:
     return parts
 
 
-async def safe_send_message(message, reply_html: str, limit: int = 4000):
-    safe = sanitize_html_for_telegram(reply_html)
-    if len(safe) <= limit:
-        await message.answer(
-            safe,
-            parse_mode="HTML",
-            disable_web_page_preview=True,
-        )
-        return
+def html_to_plain(html: str) -> str:
+    import re
+    from html import unescape
+    s = re.sub(r"<pre>\s*<code[^>]*>(.*?)</code>\s*</pre>", lambda m: "\n"+unescape(m.group(1))+"\n", html, flags=re.S|re.I)
+    s = re.sub(
+        r'<a[^>]*href="([^"]+)"[^>]*>(.*?)</a>',
+        lambda m: f"{unescape(re.sub(r'<[^>]+>', '', m.group(2))).strip()} ({m.group(1)})",
+        s,
+        flags=re.S | re.I
+    )
+    s = re.sub(r"<br\s*/?>", "\n", s, flags=re.I)
+    s = re.sub(r"</p\s*>", "\n\n", s, flags=re.I)
+    s = re.sub(r"<p(\s[^>]*)?>", "", s, flags=re.I)
+    s = re.sub(r"</?(b|strong|i|em|u|ins|s|strike|del|span|blockquote|code|pre)\b[^>]*>", "", s, flags=re.I)
+    s = re.sub(r"<[^>]+>", "", s)
+    return unescape(s).strip()
 
-    for part in split_html_for_telegram(safe, limit=limit):
-        await message.answer(
-            part,
-            parse_mode="HTML",
-            disable_web_page_preview=True,
-        )
+def _extract_offset_from_error(e: Exception) -> int | None:
+    m = re.search(r"byte offset (\d+)", str(e))
+    return int(m.group(1)) if m else None
+
+def _show_error_context(html: str, offset_bytes: int, radius: int = 120) -> str:
+    b = html.encode("utf-8", errors="ignore")
+    start = max(0, offset_bytes - radius)
+    end = min(len(b), offset_bytes + radius)
+    snippet = b[start:end].decode("utf-8", errors="ignore")
+    return snippet
+
+async def safe_send_message(message, reply_html: str, limit: int = 4000, *, disable_preview: bool = True):
+    safe = sanitize_html_for_telegram(reply_html)
+
+    try:
+        parts = split_html_for_telegram(safe, limit=limit)
+    except Exception as split_err:
+        parts = [safe]
+
+    for idx, part in enumerate(parts, 1):
+        try:
+            await message.answer(
+                part,
+                parse_mode="HTML",
+                disable_web_page_preview=disable_preview,
+            )
+        except TelegramBadRequest as e:
+            off = _extract_offset_from_error(e)
+            if off is not None:
+                ctx = _show_error_context(part, off)
+                logging.error(f"[Telegram HTML parse error] part {idx}/{len(parts)} at byte {off}\nContext:\n{ctx}\n")
+
+            try:
+                cleaned_again = sanitize_html_for_telegram(part)
+                await message.answer(
+                    cleaned_again,
+                    parse_mode="HTML",
+                    disable_web_page_preview=disable_preview,
+                )
+                continue
+            except TelegramBadRequest:
+                plain = html_to_plain(part)
+                await message.answer(
+                    plain,
+                    disable_web_page_preview=disable_preview,
+                )
