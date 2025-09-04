@@ -11,5 +11,5 @@ class User(BaseModel):
     balance: int = 0
     current_neural_network: int = 0
     with_bonus: bool = False
-    referal_id: int = None
+    referal_id: Optional[int] = None
     is_admin: bool = False
