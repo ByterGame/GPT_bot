@@ -40,6 +40,7 @@ async def configure_packages(message: Message):
 
 @admin_router.callback_query(F.data=="change_package")
 async def change_package(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     text = ("Напишите номер пакета, который хотите изменить из списка пакетов выше (одно число)\n"
             "ЭТО НОМЕР -> 1) Малый - ....\n"
             "Для отмены используй команду /cancel")
@@ -53,7 +54,7 @@ async def select_package_to_change(message: Message, state: FSMContext):
         index = int(message.text) - 1
         package = PACKAGES[index]
         text = (f"Вы хотите изменить пакет \"{package['name']}\"? Если это так, то в следующем сообщении укажите следующие данные в следующем формате\n"
-                f"<ИМЯ ПАКЕТА> - <КОЛ-ВО ТОКЕНОВ> - <ЦЕНА В РУБЛЯХ> - <ЦЕНА В ЗВЕЗДАХ>\n\n"
+                f"&ИМЯ ПАКЕТА& - &КОЛ-ВО ТОКЕНОВ& - &ЦЕНА В РУБЛЯХ& - &ЦЕНА В ЗВЕЗДАХ&\n\n"
                 f"<b>Пример:</b> \"Малый - 500 - 250 - 350\". Тут я изменил цену пакета."
                 f"Я указал, что выбранный пакет отныне называется \"Малый\", в нем 500 токенов за 250 рублей или 350 звезд\n"
                 "Для отмены используй команду /cancel")
@@ -81,8 +82,9 @@ async def change_package(message: Message, state: FSMContext):
 
 @admin_router.callback_query(F.data=="del_package")
 async def delete_package(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     text = ("Вы хотите удалить существующий пакет? Для удаления отправте мне номер пакета из списка. (одно число)\n"
-            "ЭТО НОМЕР -> 1) Малый - ....\n"
+            "ЭТО НОМЕР -& 1) Малый - ....\n"
             "Для отмены используй команду /cancel")
     await call.message.answer(text)
     await state.set_state(AdminStates.select_package_to_delete)
@@ -102,6 +104,7 @@ async def select_package_to_delete(message: Message):
 
 @admin_router.callback_query(F.data=="confirm_delete")
 async def confirm_delete(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     try:
         index = call.data.split('_')[2]
         text += (f'Пакет "{PACKAGES[index]['name']}" был удален')
@@ -114,8 +117,9 @@ async def confirm_delete(call: CallbackQuery, state: FSMContext):
 
 @admin_router.callback_query(F.data=="add_package")
 async def info_about_add_package(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     text = (f"Вы хотите добавить пакет? Если это так, то в следующем сообщении укажите следующие данные в следующем формате\n"
-            f"<ИМЯ ПАКЕТА> - <КОЛ-ВО ТОКЕНОВ> - <ЦЕНА В РУБЛЯХ> - <ЦЕНА В ЗВЕЗДАХ> - <ЖЕЛАЕМЫЙ НОМЕР В СПИСКЕ>\n\n"
+            f"&ИМЯ ПАКЕТА& - &КОЛ-ВО ТОКЕНОВ& - &ЦЕНА В РУБЛЯХ& - &ЦЕНА В ЗВЕЗДАХ& - &ЖЕЛАЕМЫЙ НОМЕР В СПИСКЕ&\n\n"
             f"<b>Пример:</b> \"Малый - 500 - 250 - 350 - 2\". Тут я изменил цену пакета."
             f"Я указал, что хочу добавить пакет \"Малый\", в нем 500 токенов за 250 рублей или 350 звезд и занять он должен второй номер в спике (все остальные пакеты начиная со второго просто прибавят в номере)\n"
             f"Вы также можете не указывать номер и отправить текст вида \"Малый - 500 - 250 - 350\", в таком случае пакет поместится в конец списка\n"
@@ -157,6 +161,7 @@ async def configure_admin(message: Message):
 
 @admin_router.callback_query(F.data=="add_admin")
 async def info_about_add_admin(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     text = ("Чтобы добавить администратора укажите в следующем сообщении его telegram id (набор цифр без пробелов)\n"
             "<b>Например:</b> 1335226579\n"
             "Для отмены используй команду /cancel")
@@ -184,6 +189,7 @@ async def add_admin(message: Message, state: FSMContext):
 
 @admin_router.callback_query(F.data=="delete_admin")
 async def info_about_delete_user(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     text = ("Для удаления админа отправь мне его id из списка админов в следующем сообщении\n"
             "Для отмены используй команду /cancel")
     await call.message.answer(text)
@@ -216,8 +222,9 @@ async def configure_bonus(message: Message):
 
 @admin_router.callback_query(F.data=="change_channel")
 async def info_about_change_channel(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     text = ("Для смены бонусного канала отправь в следующем сообщении ссылку на канал и его id без пробелов в следующем формате\n\n"
-            "<ССЫЛКА> - <TELEGRAM ID> - <ФЛАГ СБРОСА>\n"
+            "&ССЫЛКА& - &TELEGRAM ID& - &ФЛАГ СБРОСА&\n"
             "ФЛАГ СБРОСА - отвечает за то, нужно ли сбросить предыдущие бонусы, чтобы все пользователи снова могли получить бонус (0 - оставить старые бонусы, 1 - сбросить бонусы, чтобы можно было получить еще раз)"
             '<b>Пример:</b> "https://t.me/channel_name - 2888031843 - 1"\n'
             "<b>Важно!</b> Бот должен быть добавлен в этот канал и иметь все права администратора для корректной проверки подписки\n"
@@ -252,6 +259,7 @@ async def change_channel(message: Message, state: FSMContext):
 
 @admin_router.callback_query(F.data=="change_bonus_for_sub")
 async def info_about_change_bonus_for_sub(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     text = ("Вы можете изменить бонус за подписку на канал! Просто отправьте мне новый бонус (одно число без пробелов - количество токенов) в следующем сообщении\n"
             "Для отмены используй команду /cancel")
     await call.message.answer(text)
@@ -271,6 +279,7 @@ async def change_bonus_for_sub(message: Message, state: FSMContext):
 
 @admin_router.callback_query(F.data=="change_referal_bonus")
 async def info_about_change_referal_bonus(call: CallbackQuery, state: FSMContext):
+    await call.answer()
     text = (f"Вы можете изменить бонус, который получает человек с пополнения своих рефералов.\n"
             f"Сейчас это {REFERAL_BONUS}% с каждого пополнения.\n"
             "Просто отправьте новый процент бонуса в следующем сообщении и я установлю его!\n"
