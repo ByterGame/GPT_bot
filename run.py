@@ -4,6 +4,7 @@ from create_bot import bot, dp, logger, scheduler
 from aiogram.types import BotCommand, BotCommandScopeDefault
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from database.core import db
+from database import close_pool
 from handlers.start_handler import start_router
 from handlers.commands_handler import command_router
 from handlers.message_for_network_handler import general_router
@@ -70,6 +71,7 @@ async def main():
         await asyncio.Event().wait()
     finally:
         scheduler.shutdown()
+        await close_pool()
         await bot.session.close()
 
 
