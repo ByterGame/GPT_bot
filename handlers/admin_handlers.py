@@ -107,6 +107,7 @@ async def select_package_to_delete(message: Message):
 async def confirm_delete(call: CallbackQuery, state: FSMContext):
     await call.answer()
     try:
+        global PACKAGES
         index = call.data.split('_')[2]
         del PACKAGES[index]
         await call.message.answer(f'Пакет "{PACKAGES[index]['name']}" был удален')
