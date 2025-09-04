@@ -75,6 +75,7 @@ async def change_package(message: Message, state: FSMContext):
         package['token_count'] = int(new_package[1])
         package['fiat_price'] = int(new_package[2])
         package['stars_price'] = int(new_package[3])
+        await message.answer("Параметры пакета успешно изменены!")
         await state.clear()
     except Exception as e:
         await message.answer(f"ошибка {e}.\n\nПопробуйте снова")
