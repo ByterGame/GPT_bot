@@ -117,7 +117,7 @@ class DatabaseRepository:
 
         admins_id = []
         for record in rows:
-            admins_id.append(record[id])
+            admins_id.append(record['id'])
         return admins_id
     
     async def get_with_bonus(self) -> list[int]:
@@ -128,6 +128,6 @@ class DatabaseRepository:
 
         need_id = []
         for record in rows:
-            need_id.append(record[id])
+            need_id.append(record['id'])
         return need_id
     
