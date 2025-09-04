@@ -1,7 +1,7 @@
 import asyncio
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
-from config import PACKAGES, BONUS_TEXT, BONUS_CHANNEL_ID, BONUS_TOKEN
+from config import PACKAGES, BONUS_TEXT, BONUS_CHANNEL_ID, BONUS_TOKEN, REFERAL_BONUS
 from database.core import db
 from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel
 from create_bot import bot
@@ -51,7 +51,7 @@ async def successful_payment(message: Message):
     if user.referal_id:
         referal = await db_repo.get_user(user.referal_id)
         referal.balance += (package['token_count'] * 0.1)
-        text += (f"Мы также начислили бонус {int(package['token_count'] * 0.1)} токенов вашему рефереру.")
+        text += (f"Мы также начислили бонус {int(package['token_count'] * REFERAL_BONUS / 100)} токенов вашему рефереру.")
         await db_repo.update_user(referal)
         await message.answer(text, reply_markup=referal_kb())
     else:

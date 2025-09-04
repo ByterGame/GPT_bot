@@ -18,8 +18,8 @@ class DatabaseRepository:
     async def create_user(self, user: User) -> bool:
         """Добавление нового пользователя"""
         query = """
-        INSERT INTO users (id, referal_id)
-        VALUES ($1, $2)
+        INSERT INTO users (id, referal_id, is_admin)
+        VALUES ($1, $2, $3)
         ON CONFLICT (id) DO NOTHING
         RETURNING id
         """
@@ -28,7 +28,8 @@ class DatabaseRepository:
             result = await conn.fetchval(
                 query,
                 user.id,
-                user.referal_id
+                user.referal_id,
+                user.is_admin
             )
             return result is not None
         
@@ -106,4 +107,27 @@ class DatabaseRepository:
                 )
             )
         return referals
+    
+
+    async def get_admins(self) -> list[int]:
+        query = "SELECT * FROM users WHERE is_admin = $1"
+
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query, True)
+
+        admins_id = []
+        for record in rows:
+            admins_id.append(record[id])
+        return admins_id
+    
+    async def get_with_bonus(self) -> list[int]:
+        query = "SELECT * FROM users WHERE with_bonus = $1"
+
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query, True)
+
+        need_id = []
+        for record in rows:
+            need_id.append(record[id])
+        return need_id
     

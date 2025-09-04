@@ -11,7 +11,7 @@ from config import (DEFAULT_GPT_4O_LIMIT, PACKAGES, DALLE_PRICE, WHISPER_PRICE, 
                     WEB_SEARCH_PRICE, GPT_4O_MINI_PRICE, GPT_5_VISION_PRICE, MIDJOURNEY_FAST_PRICE,
                     MIDJOURNEY_MIXED_PRICE, MIDJOURNEY_TURBO_PRICE, AUDIO_MARKUP,
                     TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT,
-                    BONUS_TOKEN, DEFAULT_PROMPT, BOT_LINK_FOR_REFERAL)
+                    BONUS_TOKEN, DEFAULT_PROMPT, BOT_LINK_FOR_REFERAL, REFERAL_BONUS)
 
 
 command_router = Router()
@@ -96,7 +96,7 @@ async def let_referal_info_command(message: Message):
         await message.answer(text, reply_markup=delete_referer_kb())
     else:
         text = (f"Сейчас вы не являетесь чьм-либо рефералом, поэтому можете распространять свою ссылку для привлечения.\n\n"
-                 "За каждое пополнение вашего реферала вы будете получать 10% бонусных токенов от размера пополения.\n\n"
+                 f"За каждое пополнение вашего реферала вы будете получать {REFERAL_BONUS}% бонусных токенов от размера пополения.\n\n"
                  f"Ваша персональная ссылка: {BOT_LINK_FOR_REFERAL}?start={encode_ref(message.from_user.id)}")
         referals = await db_repo.get_referals(user.id)
         if referals:
@@ -125,7 +125,7 @@ async def let_referal_info_call(call: CallbackQuery):
         await call.message.answer(text, reply_markup=delete_referer_kb())
     else:
         text = (f"Сейчас вы не являетесь чьм-либо рефералом, поэтому можете распространять свою ссылку для привлечения.\n\n"
-                 "За каждое пополнение вашего реферала вы будете получать 10% бонусных токенов от размера пополения.\n\n"
+                 f"За каждое пополнение вашего реферала вы будете получать {REFERAL_BONUS}% бонусных токенов от размера пополения.\n\n"
                  f"Ваша персональная ссылка: {BOT_LINK_FOR_REFERAL}?start={encode_ref(call.from_user.id)}")
         await call.message.answer(text) 
 
@@ -137,7 +137,7 @@ async def delete_referer(call: CallbackQuery):
     user = await db_repo.get_user(call.from_user.id)
     if user.referal_id:
         text = (f"Теперь вы не являетесь рефералом другого пользователя, поэтому можете получить собственных рефералом распространняя ссылку: {BOT_LINK_FOR_REFERAL}?start={encode_ref(call.from_user.id)}\n"
-                "Вы будете получать 10% токенов за каждое пополнение ваших рефералов") 
+                f"Вы будете получать {REFERAL_BONUS}% токенов за каждое пополнение ваших рефералов") 
         await call.message.answer(text)
         user.referal_id = None
         await db_repo.update_user(user)

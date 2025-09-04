@@ -9,6 +9,7 @@ from handlers.commands_handler import command_router
 from handlers.message_for_network_handler import general_router
 from handlers.midjourney_handlers import midjourney_router
 from handlers.pay_handlers import pay_router
+from handlers.admin_handlers import admin_router
 from aiohttp import web
 from config import WEBHOOK_PATH, WEBHOOK_URL, PORT_BOT
 from planned_activities.reset_limits import reset_limits
@@ -28,6 +29,7 @@ async def main():
     dp.include_routers(start_router,
                        command_router,
                        pay_router,
+                       admin_router,
                        midjourney_router,
                        general_router)
     

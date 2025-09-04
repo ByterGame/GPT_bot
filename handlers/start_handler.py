@@ -6,6 +6,7 @@ from database.core import db
 from database.models import User
 from config import START_MESSAGE
 from utils.encoding import decode_ref
+from keyboards.admin_keyboards import get_admin_kb
 
 
 start_router = Router()
@@ -15,7 +16,7 @@ start_router = Router()
 async def start_bot(message: Message): 
     args = message.text.split()
     
-    await message.answer(START_MESSAGE)
+    await message.answer(START_MESSAGE, reply_markup=get_admin_kb(message.from_user.id))
     db_repo = await db.get_repository()
     
     new_user = User(id=message.from_user.id)

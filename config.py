@@ -32,6 +32,7 @@ MIDJOURNEY_FAST_PRICE = 45
 MIDJOURNEY_TURBO_PRICE = 70
 AUDIO_MARKUP = 2
 BONUS_TOKEN = 50
+REFERAL_BONUS = 10
 BONUS_CHANNEL_LINK = 't.me/test_byter'
 BOT_LINK_FOR_REFERAL = 'https://t.me/byter_test_bot'
 BONUS_CHANNEL_ID = -1002888031843
@@ -74,7 +75,7 @@ START_MESSAGE = (
     "/start - Перезапуск бота\n"
     "/mode - Выбрать нейросеть\n"
     "/profile - Профиль пользователя\n"
-    "/pay - Купить подписку\n"
+    "/pay - Купить токены\n"
     "/clear_context - Очистить контекст диалога\n"
     "/terms - Пользовательское соглашение\n"
     "/privacy - Политика конфиденциальности\n"
