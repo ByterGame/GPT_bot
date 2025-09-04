@@ -108,7 +108,7 @@ async def confirm_delete(call: CallbackQuery, state: FSMContext):
     await call.answer()
     try:
         global PACKAGES
-        index = call.data.split('_')[2]
+        index = int(call.data.split('_')[2])
         del PACKAGES[index]
         await call.message.answer(f'Пакет "{PACKAGES[index]['name']}" был удален')
         await state.clear()
@@ -137,7 +137,13 @@ async def add_package(message: Message, state: FSMContext):
         text = (f'Был добавлен пакет {data[0].strip()}, количество токенов - {data[1].strip()} за {data[2].strip()} рублей или {data[3].strip()} звезд')
         if len(data) == 5: # Есть желаемый номер
             text += f" под номером {data[4].strip()}"
-            PACKAGES = PACKAGES[:int(data[4]) - 1] + [{"name": data[0].strip(), "token_count": int(data[1]), "fiat_price": int(data[2]), "stars_price": int(data[3])}] + PACKAGES[int(data[4]) - 1:]
+            new_package = {
+                "name": data[0].strip(),
+                "token_count": int(data[1]),
+                "fiat_price": int(data[2]),
+                "stars_price": int(data[3])
+            }
+            PACKAGES.insert(int(data[4]) - 1, new_package)
         else:
             PACKAGES.append({"name": data[0].strip(), "token_count": int(data[1]), "fiat_price": int(data[2]), "stars_price": int(data[3])})
 
