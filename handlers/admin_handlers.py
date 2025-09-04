@@ -103,7 +103,7 @@ async def select_package_to_delete(message: Message):
         await message.answer(f"ошибка {e}\n\nВероятно вы ввели не одно число или такого номера нет в списке пакетов")
 
 
-@admin_router.callback_query(F.data=="confirm_delete")
+@admin_router.callback_query(F.data.startswith("confirm_delete_"))
 async def confirm_delete(call: CallbackQuery, state: FSMContext):
     await call.answer()
     try:
@@ -132,6 +132,7 @@ async def info_about_add_package(call: CallbackQuery, state: FSMContext):
 @admin_router.message(AdminStates.add_package, is_admin)
 async def add_package(message: Message, state: FSMContext):
     try:
+        global PACKAGES
         data: list[str] = message.text.split('-')  # [Имя, токены, цена рубли, цена звезды, номер в списке(optional)]
         text = (f'Был добавлен пакет {data[0].strip()}, количество токенов - {data[1].strip()} за {data[2].strip()} рублей или {data[3].strip()} звезд')
         if len(data) == 5: # Есть желаемый номер
@@ -231,15 +232,16 @@ async def info_about_change_channel(call: CallbackQuery, state: FSMContext):
             "<b>Важно!</b> Бот должен быть добавлен в этот канал и иметь все права администратора для корректной проверки подписки\n"
             "Для отмены используй команду /cancel")
     await call.message.answer(text)
-    await state.set_state(AdminStates.change_package)
+    await state.set_state(AdminStates.change_channel)
 
 
 @admin_router.message(AdminStates.change_channel, is_admin)
 async def change_channel(message: Message, state: FSMContext):
     try:
+        global BONUS_CHANNEL_LINK, BONUS_CHANNEL_ID
         data = message.text.split('-')  # [ссылка, id, флаг сброса]
         BONUS_CHANNEL_LINK = data[0].strip()
-        BONUS_TOKEN = int('-100' + data[1].strip())
+        BONUS_CHANNEL_ID = int('-100' + data[1].strip())
         if int(data):
             db_repo = await db.get_repository()
             need_reset_id = await db_repo.get_with_bonus()
@@ -270,6 +272,7 @@ async def info_about_change_bonus_for_sub(call: CallbackQuery, state: FSMContext
 @admin_router.message(AdminStates.change_bonus_for_sub, is_admin)
 async def change_bonus_for_sub(message: Message, state: FSMContext):
     try:
+        global BONUS_TOKEN
         new_bonus = int(message.text)
         BONUS_TOKEN = new_bonus
         await message.answer(f"Теперь пользователи будут получать бонус {BONUS_TOKEN} токенов за подписку на канал")
@@ -292,6 +295,7 @@ async def info_about_change_referal_bonus(call: CallbackQuery, state: FSMContext
 @admin_router.message(AdminStates.change_referal_bonus, is_admin)
 async def change_referal_bonus(message: Message, state: FSMContext):
     try:
+        global REFERAL_BONUS
         new_bonus = int(message.text)
         REFERAL_BONUS = new_bonus
         await message.answer(f"Теперь пользователи будут получать бонус {REFERAL_BONUS}% токенов за каждое пополнение своих рефералов")
