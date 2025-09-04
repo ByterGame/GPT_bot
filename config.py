@@ -17,7 +17,7 @@ SECRET_TOKEN = config('SECRET_TOKEN')
 
 DEFAULT_GPT_4O_LIMIT = 30
 PACKAGES = [
-    {"name": "Малый", "token_count": 500, "fiat_price": 199, "stars_price": 250},
+    {"name": "Малый", "token_count": 500, "fiat_price": 199, "stars_price": 1},
     {"name": "Средний", "token_count": 2000, "fiat_price": 599, "stars_price": 700},
     {"name": "Большой", "token_count": 5000, "fiat_price": 1299, "stars_price": 1550}
 ]
