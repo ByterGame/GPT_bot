@@ -120,7 +120,7 @@ async def info_about_add_package(call: CallbackQuery, state: FSMContext):
     await call.answer()
     text = (f"Вы хотите добавить пакет? Если это так, то в следующем сообщении укажите следующие данные в следующем формате\n"
             f"&ИМЯ ПАКЕТА& - &КОЛ-ВО ТОКЕНОВ& - &ЦЕНА В РУБЛЯХ& - &ЦЕНА В ЗВЕЗДАХ& - &ЖЕЛАЕМЫЙ НОМЕР В СПИСКЕ&\n\n"
-            f"<b>Пример:</b> \"Малый - 500 - 250 - 350 - 2\". Тут я изменил цену пакета."
+            f"<b>Пример:</b> \"Малый - 500 - 250 - 350 - 2\".\n"
             f"Я указал, что хочу добавить пакет \"Малый\", в нем 500 токенов за 250 рублей или 350 звезд и занять он должен второй номер в спике (все остальные пакеты начиная со второго просто прибавят в номере)\n"
             f"Вы также можете не указывать номер и отправить текст вида \"Малый - 500 - 250 - 350\", в таком случае пакет поместится в конец списка\n"
             "Для отмены используй команду /cancel")
@@ -131,11 +131,11 @@ async def info_about_add_package(call: CallbackQuery, state: FSMContext):
 @admin_router.message(AdminStates.add_package, is_admin)
 async def add_package(message: Message, state: FSMContext):
     try:
-        data: list[str] = message.split('-')  # [Имя, токены, цена рубли, цена звезды, номер в списке(optional)]
+        data: list[str] = message.text.split('-')  # [Имя, токены, цена рубли, цена звезды, номер в списке(optional)]
         text = (f'Был добавлен пакет {data[0].strip()}, количество токенов - {data[1].strip()} за {data[2].strip()} рублей или {data[3].strip()} звезд')
         if len(data) == 5: # Есть желаемый номер
             text += f" под номером {data[4].strip()}"
-            PACKAGES = PACKAGES[:int(data(4)) - 1] + [{"name": data[0].strip(), "token_count": int(data[1]), "fiat_price": int(data[2]), "stars_price": int(data[3])}] + PACKAGES[int(data[4] - 1):]
+            PACKAGES = PACKAGES[:int(data[4]) - 1] + [{"name": data[0].strip(), "token_count": int(data[1]), "fiat_price": int(data[2]), "stars_price": int(data[3])}] + PACKAGES[int(data[4]) - 1:]
         else:
             PACKAGES.append({"name": data[0].strip(), "token_count": int(data[1]), "fiat_price": int(data[2]), "stars_price": int(data[3])})
 
