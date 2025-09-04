@@ -1,19 +1,17 @@
-import logging
-import asyncio
 from datetime import datetime,timedelta
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
-from keyboards.all_inline_kb import set_mode_kb, pay_bonus_kb, kb_with_bonus_channel
+from aiogram.types import Message, CallbackQuery
+from keyboards.all_inline_kb import set_mode_kb, pay_kb, delete_referer_kb 
 from database.core import db
 from create_bot import bot
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from config import (DEFAULT_GPT5_VISION_LIMIT, DEFAULT_GPT_4O_LIMIT, 
-                    DEFAULT_GPT_5_LIMIT, DALLE_LIMIT, WHISPER_LIMIT, 
-                    MIDJOURNEY_LIMIT, SEARCH_WITH_LINKS_LIMIT, 
-                    PRICE_STARS, TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT,
-                    BONUS_TEXT, BONUS_CHANNEL_ID, BONUS_PERIOD, DEFAULT_PROMPT)
+from utils.encoding import encode_ref
+from config import (DEFAULT_GPT_4O_LIMIT, PACKAGES, DALLE_PRICE, WHISPER_PRICE, GPT_5_TEXT_PRICE,
+                    WEB_SEARCH_PRICE, GPT_4O_MINI_PRICE, GPT_5_VISION_PRICE, MIDJOURNEY_FAST_PRICE,
+                    MIDJOURNEY_MIXED_PRICE, MIDJOURNEY_TURBO_PRICE, AUDIO_MARKUP,
+                    TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT,
+                    BONUS_TOKEN, DEFAULT_PROMPT, BOT_LINK_FOR_REFERAL)
 
 
 command_router = Router()
@@ -22,7 +20,20 @@ NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full', 'set_gpt5_vision', 'set_d
 
 @command_router.message(Command("mode"))
 async def set_mode(message: Message):
-    await message.answer("Выбери нейросеть, с которой хочешь продолжить общение", reply_markup=set_mode_kb())
+    text = ("Выбери нейросеть с которой хочешь продолжить общение.\n"
+            f"Любой запрос будет использовать твои токены, кроме бесплатных ежедневных запросов к gpt 4o mini ({DEFAULT_GPT_4O_LIMIT} запросов в день)\n\n"
+            "<b>Текущие цены на запросы</b>:\n\n"
+            f"- GPT 4o mini (после бесплатного периода): 1 запрос за {GPT_4O_MINI_PRICE} токен(ов)\n\n"
+            f"- GPT 5 text: мощная нейросеть, воспринимает только текстовые сообщения. 1 запрос за {GPT_5_TEXT_PRICE} токен(ов)\n\n"
+            f"- GPT 5 vision: мощная нейросеть, способная работать с изображениями. 1 запрос за {GPT_5_VISION_PRICE} токен(ов)\n\n"
+            f"- DALLE: нейросеть для быстрой генерации изображений. 1 запрос за {DALLE_PRICE} токен(ов)\n\n"
+            f"- Whisper: интсрумент для расшифровки аудио в текст. 1 запрос за {WHISPER_PRICE} токен(ов)\n\n"
+            f"- Search with links: инструмент, позволяющий быстро найти нужную информацию в интеренете и предоставить источники. 1 запрос за {WEB_SEARCH_PRICE} токен(ов)\n\n"
+            f"- MidJourney mixed: мощная нейросеть для генерации изображений. Параметр mixed предоставляет среднее качество генерации. 1 запрос за {MIDJOURNEY_MIXED_PRICE} токен(ов)\n\n"
+            f"- MidJourney fast: мощная нейросеть для генерации изображений. Параметр fast предоставляет хорошее качество генерации. 1 запрос за {MIDJOURNEY_FAST_PRICE} токен(ов)\n\n"
+            f"- MidJourney turbo: мощная нейросеть для генерации изображений. Параметр turbo предоставляет лучшее качество генерации. 1 запрос за {MIDJOURNEY_TURBO_PRICE} токен(ов)\n\n"
+            f"- Вы также можете использовать аудио для общения. При использовании аудио любой запрос становится дороже на {AUDIO_MARKUP} токен(ов)")
+    await message.answer(text, reply_markup=set_mode_kb())
 
 
 @command_router.callback_query(F.data.in_(NEURAL_NETWORKS))
@@ -31,18 +42,17 @@ async def set_mode(call: CallbackQuery):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
     neural_index = NEURAL_NETWORKS.index(call.data)
-    if neural_index > 0 and user.end_subscription_day.date() <= datetime.now().date(): # до индекса 0 включительно бесплатные нейронки
-        await call.message.answer("Эта нейросеть доступна только по подписке!")
-        return
+   
     if neural_index == 2:
         await call.message.answer("Вы выбрали нейросеть gpt5-vision\nЭта нейросеть хорошо анализирует изображения, постарайтесь не тратить свои запросы на вопросы, которые не содержат изображение")
-    if neural_index == 3:
+    elif neural_index == 3:
         await call.message.answer("Вы выбрали DALLE - нейросеть для генерации изображений! Одним сообщением опишите, какую картинку вы хотите получить и ожидайте.")
-    if neural_index == 4:
+    elif neural_index == 4:
         await call.message.answer("Вы выбрали whisper! Просто отправь мне телеграм аудио или файл, а я верну тебе его текстовую расшифровку!")
-    if neural_index == 5:
+    elif neural_index == 5:
         await call.message.answer("Вы выбрали поиск с ссылками! Просто напишите свой запрос и ожидайте.")
-    await call.message.answer("Нейросеть выбрана успешно!")
+    else:
+        await call.message.answer("Нейросеть выбрана успешно!")
     user.current_neural_network = neural_index
     await db_repo.update_user(user)
 
@@ -51,103 +61,16 @@ async def set_mode(call: CallbackQuery):
 async def start_pay(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
-    text = ("В данный момент доступна оплата только звездами!\n"
-            f"Стоимость месячной подписки {PRICE_STARS} telegram stars\n"
-            "Подписка предоставляет следующие преимущества:\n\n"
-            "- gpt 4o mini - безлимит\n"
-            f"- gpt 5 full - {DEFAULT_GPT_5_LIMIT} запросов в день\n"
-            f"- gpt 5 vision - {DEFAULT_GPT5_VISION_LIMIT} запросов в день\n"
-            f"- DALL·E - {DALLE_LIMIT} запросов в день\n"
-            f"- Whisper - {WHISPER_LIMIT} запросов в день\n"
-            f"- MidJourney - {MIDJOURNEY_LIMIT} запросов в день\n"
-            f"- Search with links - {SEARCH_WITH_LINKS_LIMIT} запросов в день\n\n")
-    if user.end_subscription_day.date() <= datetime.now().date():
-        text += (f"Похоже сейчас у вас нет активной подписки, поэтому после оплаты вы получите подписку до {(datetime.now() + timedelta(days=30)).date()}\n")
-    else:
-        text += (f"Похоже у вас уже есть подписка, активная до {user.end_subscription_day.date()}\n"
-                 f"Поэтому после оплаты ваша подписка просто продлится до {(user.end_subscription_day + timedelta(days=30)).date()}")
-        
-    await message.answer(text, reply_markup=pay_bonus_kb())
-    await message.answer_invoice(
-        title="Месячная подписка",
-        description="Детали в сообщении выше",
-        prices=[LabeledPrice(label="Месячная подписка", amount=PRICE_STARS)],
-        provider_token="",
-        payload=f"subscription_{message.from_user.id}_{datetime.now().timestamp()}",
-        currency="XTR",
-        start_parameter=f"subscription_{message.from_user.id}"
-    )
-
-    await asyncio.sleep(240)
-    user = await db_repo.get_user(message.from_user.id)
-    if user.end_subscription_day.data() <= datetime.now().data():
-        message.answer("Ты уже на полпути к оформлению подпиский! Я уверен, что смогу помочь тебе! Надеюсь ты продолжишь начатое!")
-
-@command_router.pre_checkout_query()
-async def pre_checkout(pre_checkout_query: PreCheckoutQuery):
-    logging.info("Ожидание подтверждения")
-    await pre_checkout_query.answer(ok=True)
-    logging.info("Подтверждение отправлено")
-
-@command_router.message(F.successful_payment)
-async def successful_payment(message: Message):
-    db_repo = await db.get_repository()
-    user = await db_repo.get_user(message.from_user.id)
-    
-    if not user.end_subscription_day or user.end_subscription_day.date() < datetime.now().date():
-        user.end_subscription_day = datetime.now() + timedelta(days=30)
-    else:
-        user.end_subscription_day += timedelta(days=30)
-    
-    await db_repo.update_user(user)
-    await message.answer(f"Спасибо за оплату! Ваша подписка активна до {user.end_subscription_day.date()}")
-
-
-@command_router.callback_query(F.data == "pay_bonus_sub")
-async def let_bonus_sub(call: CallbackQuery):
-    await call.answer()
-    db_repo = await db.get_repository()
-    user = await db_repo.get_user(call.from_user.id)
-    if user.with_bonus:
-        await call.message.answer("Кажется, вы уже получили бонус за подписку на канал.")
-        return
-    await call.message.answer(BONUS_TEXT, reply_markup=kb_with_bonus_channel())
-    
-@command_router.callback_query(F.data == "check_bonus_sub")
-async def check_bonus_sub(call: CallbackQuery):
-    await call.answer()
-    try:
-        member = await bot.get_chat_member(
-            chat_id=BONUS_CHANNEL_ID,
-            user_id=call.from_user.id
-        )
-        
-        valid_statuses = [
-            'member', 'administrator', 'creator', 'restricted'
-        ]
-        
-        if member.status in valid_statuses:
-            await call.message.edit_text(
-                f"✅ Отлично! Вы подписаны. Сейчас добавим к вашей подписке {BONUS_PERIOD} дня!"
-            )
-            db_repo = await db.get_repository()
-            user = await db_repo.get_user(call.from_user.id)
-            user.end_subscription_day = (user.end_subscription_day + timedelta(days=int(BONUS_PERIOD)) 
-                                         if user.end_subscription_day.date() > datetime.now().date() 
-                                         else datetime.now() + timedelta(days=int(BONUS_PERIOD)))
-            user.with_bonus = True
-            await db_repo.update_user(user)
-            await call.message.answer(f"Ваша текущая подписка теперь действительна до {user.end_subscription_day.date()}")
-        else:
-            await call.message.answer("Похоже вы не подписаны на канал или ваши настройки приватности не позволяют проверить это")
-        
-    except TelegramBadRequest as e:
-        if "user not found" in str(e).lower() or "user not participant" in str(e).lower():
-            await call.message.answer("Похоже вы не подписаны на канал или ваши настройки приватности не позволяют проверить это")
-        raise e
-    except Exception as e:
-        print(f"Error checking subscription: {e}")
-        return False      
+    text = ("В данный момент доступна оплата только звездами!\n\n"
+            "<b>Для покупки представленны следующие пакеты</b>:\n\n")
+    for package in PACKAGES:
+        text += f"Пакет {package['name']} - {package['token_count']} токенов за {package['fiat_price']} рублей или {package['stars_price']} звезд!\n\n"
+    text += f"В данный момент вам доступно {user.balance} токенов"
+    if not user.with_bonus:
+        text += f"\n\n вы можете получить бонусные {BONUS_TOKEN} токенов за подписку на наш канал!"
+        await message.answer(text, reply_markup=pay_kb(with_bonus=True))
+    else: 
+        await message.answer(text, reply_markup=pay_kb(with_bonus=False))   
 
 
 @command_router.message(Command("clear_context"))
@@ -159,29 +82,76 @@ async def clear_context(message: Message):
     await message.answer("Контекст очищен!")
 
 
+@command_router.message(Command("referal"))
+async def let_referal_info_command(message: Message):
+    db_repo = await db.get_repository()
+    user = await db_repo.get_user(message.from_user.id)
+    if user.referal_id:
+        referal = await bot.get_chat(user.referal_id)
+        if referal:
+            text = (f"Сейчас вы являетесь рефералом пользователя {'@' + referal.username if referal.username else referal.first_name}.\n\n"
+                    "Вы не можете иметь своих рефералов пока сами являетесь рефералом.")
+        else:
+            text = ("Сейчас вы являетесь рефералом пользователя, о котором нет актуальной информации.\n\nВы не можете иметь своих рефералов пока сами являетесь рефералом.")
+        await message.answer(text, reply_markup=delete_referer_kb())
+    else:
+        text = (f"Сейчас вы не являетесь чьм-либо рефералом, поэтому можете распространять свою ссылку для привлечения.\n\n"
+                 "За каждое пополнение вашего реферала вы будете получать 10% бонусных токенов от размера пополения.\n\n"
+                 f"Ваша персональная ссылка: {BOT_LINK_FOR_REFERAL}?start={encode_ref(message.from_user.id)}")
+        referals = await db_repo.get_referals(user.id)
+        if referals:
+            text += ("\n\nВаши текущие рефералы:\n")
+            unknown_referal = 0
+            for referal in referals:
+                referal_chat = await bot.get_chat(referal.id)
+                if referal_chat:
+                    text += (f"{'@' + referal_chat.username if referal_chat.username else referal_chat.first_name}\n")
+                else:
+                    unknown_referal += 1
+            if unknown_referal:
+                text += f"Также у вас есть {unknown_referal} реферал(ов), о которых сейчас нет информации"            
+        await message.answer(text)
+
+
+@command_router.callback_query(F.data=="referal_info")  
+async def let_referal_info_call(call: CallbackQuery):
+    db_repo = await db.get_repository()
+    user = await db_repo.get_user(call.from_user.id)
+    if user.referal_id:
+        referal = await bot.get_chat(user.referal_id)
+        text = (f"Сейчас вы являетесь рефералом пользователя {'@' + referal.username if referal.username else referal.first_name}.\n\n"
+                "Вы не можете иметь своих рефералов пока сами являетесь рефералом.")
+        await call.message.answer(text, reply_markup=delete_referer_kb())
+    else:
+        text = (f"Сейчас вы не являетесь чьм-либо рефералом, поэтому можете распространять свою ссылку для привлечения.\n\n"
+                 "За каждое пополнение вашего реферала вы будете получать 10% бонусных токенов от размера пополения.\n\n"
+                 f"Ваша персональная ссылка: {BOT_LINK_FOR_REFERAL}?start={encode_ref(call.from_user.id)}")
+        await call.message.answer(text) 
+
+
+@command_router.callback_query(F.data=="delete_referer")
+async def delete_referer(call: CallbackQuery):
+    db_repo = await db.get_repository()
+    user = await db_repo.get_user(call.from_user.id)
+    if user.referal_id:
+        text = (f"Теперь вы не являетесь рефералом другого пользователя, поэтому можете получить собственных рефералом распространняя ссылку: {BOT_LINK_FOR_REFERAL}?start={call.from_user.id}") 
+        await call.message.answer(text)
+        user.referal_id = None
+        await db_repo.update_user(user)
+    else:
+        await call.message.answer("Вы и так не являетесь чьим-либо рефералом") 
+            
+
 @command_router.message(Command("profile"))
 async def let_profile_handler(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
     text = ("Это ваш профиль.\n"
             "ID\n"
-            f"{message.from_user.id}\n\n")
-    if user.end_subscription_day.date() <= datetime.now().date():
-        text += ("Сейчас у вас нет активной подписки\n"
-                 "Для оформления подписки используйте команду /pay\n\n"
-                 f"<b>Лимиты</b>:\n- gpt 4o mini - осталось {user.gpt_4o_mini_requests}/{DEFAULT_GPT_4O_LIMIT}\n"
-                 f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date()} в 00:00 МСК")
-    else:
-        text += ("Сейчас у вас активна подписка\n\n"
-                 f"<b>Лимиты</b>:\n- gpt 4o mini - безлимитное использование\n"
-                 f"- gpt 5 full - осталось {user.gpt_5_requests}/{DEFAULT_GPT_5_LIMIT}\n"
-                 f"- gpt 5 vision - осталось {user.gpt_5_vision_requests}/{DEFAULT_GPT5_VISION_LIMIT}\n"
-                 f"- DALL·E - осталось {user.dalle_requests}/{DALLE_LIMIT}\n"
-                 f"- Whisper - осталось {user.whisper_requests}/{WHISPER_LIMIT}\n"
-                 f"- MidJourney - осталось {user.midjourney_requests}/{MIDJOURNEY_LIMIT}\n"
-                 f"- Search with links - осталось {user.search_with_links_requests}/{SEARCH_WITH_LINKS_LIMIT}.\n\n"
-                 f"Обновление лимитов произойдет {(datetime.now() + timedelta(days=1)).date()} в 00:00 МСК")
-        
+            f"{message.from_user.id}\n\n"
+            f"<b>Ваш баланс</b>: {user.balance} токенов\n\n"
+            f"Остаток бесплатных запросов к gpt 4o mini на сегодня - {user.gpt_4o_mini_requests}/{DEFAULT_GPT_4O_LIMIT}")
+    
     await message.answer(text)
 
 

@@ -1,0 +1,105 @@
+import asyncio
+from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
+from config import PACKAGES, BONUS_TEXT, BONUS_CHANNEL_ID, BONUS_TOKEN
+from database.core import db
+from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel
+from create_bot import bot
+from aiogram.exceptions import TelegramBadRequest
+
+
+pay_router = Router()
+
+
+@pay_router.callback_query(F.data.startswith('buy_'))
+async def let_pay_message(call: CallbackQuery):
+    db_repo = await db.get_repository()
+    data = call.data.split("_") # ["buy", index, currecy_type]
+    package = PACKAGES[int(data[1])]
+    if data[2] == "stars":
+        await call.message.answer_invoice(
+            title=f"Пакет {package['name']}",
+            description="Детали в сообщении выше",
+            prices=[LabeledPrice(label=f"Пакет {package['name']}", amount=package['stars_price'])],
+            provider_token="",
+            payload=f"{data[1]}_{call.from_user.id}",
+            currency="XTR",
+            start_parameter=f"{package['name']}_for_{call.from_user.id}"
+        )
+    else:
+        pass # тут оплата рублями через робокассу 
+
+    await asyncio.sleep(240)
+    user = await db_repo.get_user(call.from_user.id)
+    if user.balance < 150: # цифра из головы, в будущем можно брать минимальный размер пакета минус 1 токен
+        call.message.answer("Ты уже на полпути к своим токенам! Я уверен, что смогу помочь тебе! Надеюсь ты продолжишь начатое!")
+
+
+@pay_router.pre_checkout_query()
+async def pre_checkout(pre_checkout_query: PreCheckoutQuery):
+    await pre_checkout_query.answer(ok=True)
+
+@pay_router.message(F.successful_payment)
+async def successful_payment(message: Message):
+    db_repo = await db.get_repository()
+    user = await db_repo.get_user(message.from_user.id)
+    payload = message.successful_payment.invoice_payload.split('_') # [index, user_id]
+    package = PACKAGES[int(payload[0])]
+    user.balance += package['token_count']
+    text = (f"Спасибо за покупку!\n\nНа ваш баланс было начислено {package['token_count']} токенов. Сейчас у вас {user.balance} токенов!")
+    if user.referal_id:
+        referal = await db_repo.get_user(user.referal_id)
+        referal.balance += (package['token_count'] * 0.1)
+        text += (f"Мы также начислили бонус {package['token_count'] * 0.1} токенов вашему рефереру.")
+        await db_repo.update_user(referal)
+        await message.answer(text, reply_markup=referal_kb())
+    else:
+        await message.answer(text)
+    
+    await db_repo.update_user(user)
+
+
+@pay_router.callback_query(F.data == "pay_bonus_sub")
+async def let_bonus_sub(call: CallbackQuery):
+    await call.answer()
+    db_repo = await db.get_repository()
+    user = await db_repo.get_user(call.from_user.id)
+    if user.with_bonus:
+        await call.message.answer("Кажется, вы уже получили бонус за подписку на канал.")
+        return
+    await call.message.answer(BONUS_TEXT, reply_markup=kb_with_bonus_channel())
+    
+@pay_router.callback_query(F.data == "check_bonus_sub")
+async def check_bonus_sub(call: CallbackQuery):
+    await call.answer()
+    try:
+        member = await bot.get_chat_member(
+            chat_id=BONUS_CHANNEL_ID,
+            user_id=call.from_user.id
+        )
+        
+        valid_statuses = [
+            'member', 'administrator', 'creator', 'restricted'
+        ]
+        
+        if member.status in valid_statuses:
+            await call.message.edit_text(
+                f"✅ Отлично! Вы подписаны. Сейчас добавим к вашему балансу {BONUS_TOKEN} токенов!"
+            )
+            db_repo = await db.get_repository()
+            user = await db_repo.get_user(call.from_user.id)
+            user.balance += BONUS_TOKEN
+            user.with_bonus = True
+            await db_repo.update_user(user)
+            await call.message.answer(f"Ваш текущий баланс {user.balance}")
+        else:
+            await call.message.answer("Похоже вы не подписаны на канал или ваши настройки приватности не позволяют проверить это")
+        
+    except TelegramBadRequest as e:
+        if "user not found" in str(e).lower() or "user not participant" in str(e).lower():
+            await call.message.answer("Похоже вы не подписаны на канал или ваши настройки приватности не позволяют проверить это")
+        raise e
+    except Exception as e:
+        print(f"Error checking subscription: {e}")
+        return False   
+    

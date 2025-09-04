@@ -5,19 +5,27 @@ from aiogram.types import Message
 from database.core import db
 from database.models import User
 from config import START_MESSAGE
+from utils.encoding import decode_ref
 
 
 start_router = Router()
 
 
 @start_router.message(CommandStart())
-async def start_bot(message: Message):    
+async def start_bot(message: Message): 
+    args = message.text.split()
+    
     await message.answer(START_MESSAGE)
     db_repo = await db.get_repository()
     
     new_user = User(id=message.from_user.id)
+    if len(args) > 1:
+        referer_id = decode_ref(args[1])
+        await message.answer(f"Вы пришли по приглашению пользователя {referer_id}. Сейчас он назначен вашем рефералом.")
+        new_user.referal_id = referer_id
     add_user = await db_repo.create_user(new_user)
     if add_user:
         logging.info(f"Добавлен новый пользователь id: {new_user.id}")
     else:
         logging.info(f"Пользователь с id {new_user.id} уже существует")
+        

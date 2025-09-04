@@ -9,7 +9,10 @@ from neural_networks.MidJourney import send_prompt, poll_task
 from database.core import db
 from datetime import datetime
 from create_bot import bot
-from config import BOT_TOKEN, GOOGLE_API_KEY, CX_ID, DEFAULT_PROMPT
+from config import (BOT_TOKEN, GOOGLE_API_KEY, CX_ID, DEFAULT_PROMPT,
+                    DALLE_PRICE, WHISPER_PRICE, GPT_5_TEXT_PRICE, WEB_SEARCH_PRICE,
+                    GPT_4O_MINI_PRICE, GPT_5_VISION_PRICE, MIDJOURNEY_FAST_PRICE,
+                    MIDJOURNEY_MIXED_PRICE, MIDJOURNEY_TURBO_PRICE)
 from collections import defaultdict
 from asyncio import sleep
 from utils.text_utils import safe_send_message
@@ -41,8 +44,8 @@ async def handle_album(message: Message):
         await messages[0].answer(f"Выбранная нейросеть не подходит для анализа изображений.\n\nСейчас вы используете {NEURAL_NETWORKS[user.current_neural_network]}")
         return
 
-    if user.end_subscription_day.date() <= datetime.now().date() or user.gpt_5_vision_requests < 1:
-        await messages[0].answer("Кажется у вас нет активной подписки на эту нейросеть или ваши запросы к ней закончились:(")
+    if user.balance <= GPT_5_VISION_PRICE:
+        await messages[0].answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
         return
 
     await messages[0].answer("Обрабатываю альбом...")
@@ -55,7 +58,7 @@ async def handle_album(message: Message):
             url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}"
             image_urls.append(url)
 
-    user.gpt_5_vision_requests -= 1
+    user.balance -= GPT_5_VISION_PRICE
 
     text = messages[0].caption or ""
     try:
@@ -85,8 +88,8 @@ async def handle_audio_message(message: Message):
 
     neural_index = user.current_neural_network
 
-    if user.end_subscription_day.date() <= datetime.now().date() or user.whisper_requests < 1:
-        await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня уже закончились :(")
+    if user.balance < WHISPER_PRICE:
+        await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
         return
 
     processing_msg = await message.answer("Преобразую аудио в текст...")
@@ -105,7 +108,7 @@ async def handle_audio_message(message: Message):
     except Exception as e:
         logging.warning(f"Не удалось удалить временный файл {local_path}: {e}")
 
-    user.whisper_requests -= 1
+    user.balance -= WHISPER_PRICE
     await db_repo.update_user(user)
 
     if neural_index != 4:
@@ -128,9 +131,9 @@ async def simple_message_handler(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
     if user.current_neural_network == 0:
-        if user.gpt_4o_mini_requests < 1 and user.end_subscription_day.date() <= datetime.now().date():
-            await message.answer("Кажется твои запросы на сегодня уже закончились:( "
-                                    "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся")
+        if user.gpt_4o_mini_requests < 1 and user.balance < GPT_4O_MINI_PRICE:
+            await message.answer("Кажется твои бесплатные запросы на сегодня уже закончились, а токенов на платный запрос не хватает:( "
+                                "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся или купи токены по команде /pay")
             return
         if message.photo:
             await message.answer("Для анализа изображений выбери gpt5 vision")
@@ -138,8 +141,6 @@ async def simple_message_handler(message: Message):
         
         processing_msg = await message.answer("Думаю над твоим вопросом...")
         
-        if user.end_subscription_day.date() <= datetime.now().date():
-            user.gpt_4o_mini_requests -= 1
         try:
             reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
         except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
@@ -152,18 +153,23 @@ async def simple_message_handler(message: Message):
         else:
             await safe_send_message(message, reply)
         await processing_msg.delete()
+        if user.gpt_4o_mini_requests > 0:
+            user.gpt_4o_mini_requests -= 1
+            if user.gpt_4o_mini_requests == 0:
+                await message.answer("Ваши бесплатные запросы на сегодня закончились. Следующие будут использовать токены.")
+        else:
+            user.balance -= GPT_4O_MINI_PRICE
+
         user.context = new_context
         await db_repo.update_user(user)
     elif user.current_neural_network == 1:
-        if user.end_subscription_day.date() <= datetime.now().date() or user.gpt_5_requests < 1:
-            await message.answer("Кажется твои запросы на сегодня уже закончились:( "
-                                    "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся или используй другую нейросеть")
+        if user.balance < GPT_5_TEXT_PRICE:
+            await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
             return
         if message.photo:
             await message.answer("Для анализа изображений выбери gpt5 vision")
             return
         processing_msg = await message.answer("Думаю над твоим вопросом...")
-        user.gpt_5_requests -= 1
         try:
             reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
         except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
@@ -175,12 +181,12 @@ async def simple_message_handler(message: Message):
             await message.answer(reply)
         else:
             await safe_send_message(message, reply)
+        user.balance -= GPT_5_TEXT_PRICE
         user.context = new_context
         await db_repo.update_user(user)
     elif user.current_neural_network == 2:
-        if user.end_subscription_day.date() <= datetime.now().date() or user.gpt_5_vision_requests < 1:
-            await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня уже закончились:( \n"
-                                    "Попробуй завтра или используй другую нейросеть")
+        if user.balance < GPT_5_VISION_PRICE:
+            await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
             return
 
         processing_msg = await message.answer("Обрабатываю изображение...")
@@ -191,7 +197,6 @@ async def simple_message_handler(message: Message):
             file_info = await bot.get_file(photo.file_id)
             image_url.append(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}")
 
-        user.gpt_5_vision_requests -= 1
         try:
             reply, new_context = gpt.chat_with_gpt5_vision(
                 message_text=message.caption if message.caption else message.text,
@@ -209,12 +214,12 @@ async def simple_message_handler(message: Message):
         else:
             await safe_send_message(message, reply)
         await processing_msg.delete()
+        user.balance -= GPT_5_VISION_PRICE
         user.context = new_context
         await db_repo.update_user(user)
     elif user.current_neural_network == 3:
-        if user.end_subscription_day.date() <= datetime.now().date() or user.dalle_requests < 1:
-            await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(\n"
-                                    "Попробуй завтра или используй другую нейросеть")
+        if user.balance < DALLE_PRICE:
+            await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
             return
 
         if message.photo:
@@ -222,8 +227,6 @@ async def simple_message_handler(message: Message):
             return
         
         processing_msg = await message.answer("Генерирую изображение...") 
-        
-        user.dalle_requests -= 1
 
         prompt = message.caption if message.caption else message.text
         try:
@@ -243,7 +246,7 @@ async def simple_message_handler(message: Message):
             await processing_msg.delete()
         else:
             await message.answer("Не удалось сгенерировать изображение :(")
-
+        user.balance -= DALLE_PRICE
         user.context = new_context
         await db_repo.update_user(user)
     elif user.current_neural_network == 4:
@@ -251,9 +254,8 @@ async def simple_message_handler(message: Message):
     elif user.current_neural_network == 5:
         await handle_search_with_links(message, user)
     elif user.current_neural_network == 6:
-        if user.end_subscription_day.date() <= datetime.now().date() or user.midjourney_requests < 1:
-            await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(\n"
-                                 "Попробуй завтра или используй другую нейросеть")
+        if user.balance < MIDJOURNEY_MIXED_PRICE:
+            await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
             return
 
         if message.photo:
@@ -282,7 +284,7 @@ async def simple_message_handler(message: Message):
         task_id = result["task_id"]
         image_url = await poll_task(task_id, message.from_user.id)
         if image_url:
-            user.midjourney_requests -= 1
+            user.balance -= MIDJOURNEY_MIXED_PRICE
             photo_file = await download_photo(image_url, task_id)
             if photo_file:
                 await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
@@ -335,7 +337,7 @@ def web_search(query, max_results=3):
 async def handle_search_with_links(message: Message, user: User):
     db_repo = await db.get_repository()
 
-    if user.end_subscription_day.date() <= datetime.now().date() or user.search_with_links_requests < 1:
+    if user.balance < WEB_SEARCH_PRICE:
         await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(")
         return
 
@@ -366,7 +368,7 @@ async def handle_search_with_links(message: Message, user: User):
         await safe_send_message(message, reply)
 
     user.context = new_context
-    user.search_with_links_requests -= 1
+    user.balance -= WEB_SEARCH_PRICE
     await db_repo.update_user(user)
     await processing_msg.delete()
 

@@ -8,6 +8,7 @@ from database.core import db
 from datetime import datetime
 from keyboards.all_inline_kb import mj_kb
 from utils.download_photo import download_photo
+from config import MIDJOURNEY_MIXED_PRICE
 
 
 midjourney_router = Router()
@@ -43,7 +44,7 @@ async def send_variation_request(message: Message, state: FSMContext):
     image_url = await poll_task(task_id, message.from_user.id)
 
     if image_url:
-        user.midjourney_requests -= 1
+        user.balance -= MIDJOURNEY_MIXED_PRICE
         photo_file = await download_photo(image_url, task_id)
         if photo_file:
             await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
@@ -64,8 +65,8 @@ async def variations_handler(call: CallbackQuery, state: FSMContext):
     await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
-    if user.midjourney_requests < 1 and user.end_subscription_day.date() <= datetime.now().date():
-        await call.message.answer("Кажется у вас закончилась подписка или доступные запросы на сегодня.")
+    if user.balance < MIDJOURNEY_MIXED_PRICE:
+        await call.message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
         return
     data = call.data.split('_')
     origin_task_id = data[1]
@@ -85,7 +86,7 @@ async def upscale_handler(call: CallbackQuery):
     await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
-    if user.end_subscription_day.date() <= datetime.now().date():
+    if user.balance < MIDJOURNEY_MIXED_PRICE:
         await call.message.answer("Кажется у вас закончилась подписка, вы всегда можете продлить ее использовав команду /pay")
         return
     proc_msg = await call.message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
@@ -115,7 +116,7 @@ async def upscale_handler(call: CallbackQuery):
         else:
             await call.message.answer((f"Кажется, что скачивание изображения занимает немного больше времени...\n"
                                        f"Вы можете посмотреть и скачать его сами в оригинальном качестве по ссылке\n{image_url}"))
-        user.midjourney_requests -= 1
+        user.balance -= MIDJOURNEY_MIXED_PRICE
         await db_repo.update_user(user)
     else:
         await call.message.answer("Произошла ошибка, попробуйте позже!")
