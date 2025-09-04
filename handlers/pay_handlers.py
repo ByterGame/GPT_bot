@@ -13,6 +13,7 @@ pay_router = Router()
 
 @pay_router.callback_query(F.data.startswith('buy_'))
 async def let_pay_message(call: CallbackQuery):
+    await call.answer()
     db_repo = await db.get_repository()
     data = call.data.split("_") # ["buy", index, currecy_type]
     package = PACKAGES[int(data[1])]

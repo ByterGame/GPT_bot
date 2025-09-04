@@ -67,7 +67,7 @@ async def start_pay(message: Message):
         text += f"Пакет {package['name']} - {package['token_count']} токенов за {package['fiat_price']} рублей или {package['stars_price']} звезд!\n\n"
     text += f"В данный момент вам доступно {user.balance} токенов"
     if not user.with_bonus:
-        text += f"\n\n вы можете получить бонусные {BONUS_TOKEN} токенов за подписку на наш канал!"
+        text += f"\n\nВы можете получить бонусные {BONUS_TOKEN} токенов за подписку на наш канал!"
         await message.answer(text, reply_markup=pay_kb(with_bonus=True))
     else: 
         await message.answer(text, reply_markup=pay_kb(with_bonus=False))   
@@ -115,6 +115,7 @@ async def let_referal_info_command(message: Message):
 
 @command_router.callback_query(F.data=="referal_info")  
 async def let_referal_info_call(call: CallbackQuery):
+    await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
     if user.referal_id:
@@ -131,6 +132,7 @@ async def let_referal_info_call(call: CallbackQuery):
 
 @command_router.callback_query(F.data=="delete_referer")
 async def delete_referer(call: CallbackQuery):
+    await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
     if user.referal_id:
