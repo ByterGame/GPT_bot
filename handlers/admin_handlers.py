@@ -242,7 +242,7 @@ async def change_channel(message: Message, state: FSMContext):
         data = message.text.split('-')  # [ссылка, id, флаг сброса]
         BONUS_CHANNEL_LINK = data[0].strip()
         BONUS_CHANNEL_ID = int('-100' + data[1].strip())
-        if int(data):
+        if int(data[2]):
             db_repo = await db.get_repository()
             need_reset_id = await db_repo.get_with_bonus()
             for id in need_reset_id:
