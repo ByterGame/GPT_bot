@@ -1,9 +1,8 @@
 from database.core import db
 from database.models import User
 import json
-from config import (DEFAULT_GPT5_VISION_LIMIT, DEFAULT_GPT_4O_LIMIT, 
-                    DEFAULT_GPT_5_LIMIT, DALLE_LIMIT, WHISPER_LIMIT, 
-                    MIDJOURNEY_LIMIT, SEARCH_WITH_LINKS_LIMIT)
+from config import DEFAULT_GPT_4O_LIMIT
+                    
 
 
 async def reset_limits():
@@ -16,15 +15,12 @@ async def reset_limits():
     for record in records:
         user = User(
             id=record['id'],
-            end_subscription_day=record['end_subscription_day'],
             context=json.loads(record['context']) if record['context'] else None,
             gpt_4o_mini_requests=DEFAULT_GPT_4O_LIMIT,
-            gpt_5_requests=DEFAULT_GPT_5_LIMIT,
-            gpt_5_vision_requests=DEFAULT_GPT5_VISION_LIMIT,
-            dalle_requests=DALLE_LIMIT,
-            whisper_requests=WHISPER_LIMIT,
-            midjourney_requests=MIDJOURNEY_LIMIT,
-            search_with_links_requests=SEARCH_WITH_LINKS_LIMIT,
-            with_bonus=record['with_bonus']
+            with_bonus=record['with_bonus'],
+            balance=record['balance'],
+            current_neural_network=record['current_neural_network'],
+            is_admin=record['is_admin'],
+            referal_id=record['referal_id']
         )
         await db_repo.update_user(user)
