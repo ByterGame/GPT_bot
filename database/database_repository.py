@@ -65,8 +65,9 @@ class DatabaseRepository:
             current_neural_network = $3,
             with_bonus = $4,
             referal_id = $5,
-            is_admin = $6
-        WHERE id = $7
+            is_admin = $6,
+            balance = $7
+        WHERE id = $8
         """
         
         async with self.pool.acquire() as conn:
@@ -78,6 +79,7 @@ class DatabaseRepository:
                 user.with_bonus,
                 user.referal_id,
                 user.is_admin,
+                user.balance,
                 user.id
             )
 
