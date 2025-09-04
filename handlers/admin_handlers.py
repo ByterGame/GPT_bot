@@ -5,7 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 from database.core import db
 from database.models import User
 from config import PACKAGES, BONUS_CHANNEL_LINK, BONUS_CHANNEL_ID, BONUS_TOKEN, REFERAL_BONUS
-from keyboards.admin_keyboards import configure_packages_kb, confirm_delete, configure_admin, configure_bonus
+from keyboards.admin_keyboards import configure_packages_kb, confirm_delete_kb, configure_admin_kb, configure_bonus_kb
 from create_bot import bot
 
 
@@ -98,7 +98,7 @@ async def select_package_to_delete(message: Message):
         package = PACKAGES[index]
         text = (f"Вы хотите удалить пакет \"{package['name']}\"? Если это так, то нажмите на кнопку ниже\n"
                 "Для отмены используй команду /cancel")
-        await message.answer(text, reply_markup=confirm_delete(index))
+        await message.answer(text, reply_markup=confirm_delete_kb(index))
     except Exception as e:
         await message.answer(f"ошибка {e}\n\nВероятно вы ввели не одно число или такого номера нет в списке пакетов")
 
@@ -157,7 +157,7 @@ async def configure_admin(message: Message):
             text += f"id: {id}, tag/name: {'@' + chat.username if chat.username else chat.first_name}\n"
         else:
             text += f"id: {id}. Бот не может получить другие данные этого пользователя, возможно у него не начат чат с ботом.\n"
-    await message.answer(text, reply_markup=configure_admin())
+    await message.answer(text, reply_markup=configure_admin_kb())
 
 
 @admin_router.callback_query(F.data=="add_admin")
@@ -218,7 +218,7 @@ async def delete_admin(message: Message, state: FSMContext):
 
 @admin_router.message(F.text=="Настроить бонусы", is_admin)
 async def configure_bonus(message: Message):
-    await message.answer("Вы можете изменить канал, за который хотите выдавать бонус или изменить количество бонусных токенов.", reply_markup=configure_bonus())
+    await message.answer("Вы можете изменить канал, за который хотите выдавать бонус или изменить количество бонусных токенов.", reply_markup=configure_bonus_kb())
 
 
 @admin_router.callback_query(F.data=="change_channel")

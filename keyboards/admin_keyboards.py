@@ -22,11 +22,11 @@ def configure_packages_kb():
     return InlineKeyboardMarkup(inline_keyboard=kb_list)
 
 
-def confirm_delete(index: int):
+def confirm_delete_kb(index: int):
     return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Да, удалить", callback_data=f"confirm_delete_{index}")]])
 
 
-def configure_admin():
+def configure_admin_kb():
     kb_list = [
         [InlineKeyboardButton(text="Добавить админа", callback_data="add_admin")],
         [InlineKeyboardButton(text="Удалить админа", callback_data="delete_admin")]
@@ -34,7 +34,7 @@ def configure_admin():
     return InlineKeyboardMarkup(inline_keyboard=kb_list)
 
 
-def configure_bonus():
+def configure_bonus_kb():
     kb_list = [
         [InlineKeyboardButton(text="Изменить бонусный канал", callback_data="change_channel")],
         [InlineKeyboardButton(text="Изменить бонус за подписку", callback_data="change_bonus_for_sub")],
