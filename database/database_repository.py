@@ -49,7 +49,8 @@ class DatabaseRepository:
                     current_neural_network=record['current_neural_network'],
                     with_bonus=record['with_bonus'],
                     referal_id=record['referal_id'],
-                    is_admin=record['is_admin']
+                    is_admin=record['is_admin'],
+                    balance=record['balance']
                 )
             logging.warning(f"Пользователь с id={user_id} не найден в БД")
             return None
@@ -100,7 +101,8 @@ class DatabaseRepository:
                     current_neural_network=record['current_neural_network'],
                     with_bonus=record['with_bonus'],
                     referal_id=record['referal_id'],
-                    is_admin=record['is_admin']
+                    is_admin=record['is_admin'],
+                    balance=record['balance']
                 )
             )
         return referals
