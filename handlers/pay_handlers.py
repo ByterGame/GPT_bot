@@ -25,7 +25,7 @@ async def let_pay_message(call: CallbackQuery):
             provider_token="",
             payload=f"{data[1]}_{call.from_user.id}",
             currency="XTR",
-            start_parameter=f"{package['name']}_for_{call.from_user.id}"
+            start_parameter=f"index_pack{data[1]}_for_{call.from_user.id}"
         )
     else:
         pass # тут оплата рублями через робокассу 
