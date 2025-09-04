@@ -51,7 +51,7 @@ async def successful_payment(message: Message):
     if user.referal_id:
         referal = await db_repo.get_user(user.referal_id)
         referal.balance += (package['token_count'] * 0.1)
-        text += (f"Мы также начислили бонус {package['token_count'] * 0.1} токенов вашему рефереру.")
+        text += (f"Мы также начислили бонус {int(package['token_count'] * 0.1)} токенов вашему рефереру.")
         await db_repo.update_user(referal)
         await message.answer(text, reply_markup=referal_kb())
     else:
