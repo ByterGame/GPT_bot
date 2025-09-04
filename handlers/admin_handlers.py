@@ -185,7 +185,7 @@ async def add_admin(message: Message, state: FSMContext):
         user = await db_repo.get_user(id)
         if user: 
             user.is_admin = True
-            db_repo.update_user(user)
+            await db_repo.update_user(user)
         else:
             user = User(id=id, is_admin=True)
             await db_repo.create_user(user)
@@ -212,7 +212,7 @@ async def delete_admin(message: Message, state: FSMContext):
         user = await db_repo.get_user(id)
         if user: 
             user.is_admin = False
-            db_repo.update_user(user)
+            await db_repo.update_user(user)
         else:
             await message.answer("Такого пользователя нет в базе данных. Проверьте id и попробуйте отправить мне его еще раз в следующем сообщении!\n"
                                  "Для отмены используй команду /cancel")
