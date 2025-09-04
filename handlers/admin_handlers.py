@@ -108,9 +108,8 @@ async def confirm_delete(call: CallbackQuery, state: FSMContext):
     await call.answer()
     try:
         index = call.data.split('_')[2]
-        text += (f'Пакет "{PACKAGES[index]['name']}" был удален')
         del PACKAGES[index]
-        await call.message.answer(text)
+        await call.message.answer(f'Пакет "{PACKAGES[index]['name']}" был удален')
         await state.clear()
     except Exception as e:
         await call.message.answer(f"ошибка {e}.\n\nПопробуйте снова")
