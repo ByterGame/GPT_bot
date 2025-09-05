@@ -169,21 +169,21 @@ class DatabaseRepository:
         UPDATE config_data
         SET 
             packages = $1,
-            GPT_4o_mini_price = $2,
-            GPT_5_text_price = $3,
-            GPT_5_vision_price = $4,
-            Whisper_price = $5,
-            Midjourney_mixed_price = $6,
-            Midjourney_fast_price = $7,
-            Midjourney_turbo_price = $8,
-            Audio_markup = $9,
-            Bonus_token = $10,
-            Referal_bonus = $11,
+            "GPT_4o_mini_price" = $2,
+            "GPT_5_text_price" = $3,
+            "GPT_5_vision_price" = $4,
+            "Whisper_price" = $5,
+            "Midjourney_mixed_price" = $6,
+            "Midjourney_fast_price" = $7,
+            "Midjourney_turbo_price" = $8,
+            "Audio_markup" = $9,
+            "Bonus_token" = $10,
+            "Referal_bonus" = $11,
             bonus_channel_link = $12,
             bot_link_for_referal = $13,
             bonus_channel_id = $14,
             default_4o_limit = $15,
-            Dalle_price = $16,
+            "Dalle_price" = $16,
             search_with_links_price = $17
         WHERE id = $18
         """
@@ -191,7 +191,7 @@ class DatabaseRepository:
         async with self.pool.acquire() as conn:
             await conn.execute(
                 query,
-                json.dumps(new_config.packages) if new_config.packages else "",
+                json.dumps(new_config.packages) if new_config.packages else "[]",
                 new_config.GPT_4o_mini_price,
                 new_config.GPT_5_text_price,
                 new_config.GPT_5_vision_price,
