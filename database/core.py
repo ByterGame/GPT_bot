@@ -9,6 +9,7 @@ class Database:
 
     async def connect(self):
         self._repository = await DatabaseRepository.connect()
+        self.config = self._repository.get_config()
         return self
 
     async def get_repository(self):

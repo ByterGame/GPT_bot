@@ -1,7 +1,6 @@
 import asyncio
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
-from config import BONUS_TEXT
 from database.core import db
 from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel
 from create_bot import bot
@@ -67,10 +66,11 @@ async def let_bonus_sub(call: CallbackQuery):
     await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
+    config = await db_repo.get_config()
     if user.with_bonus:
         await call.message.answer("Кажется, вы уже получили бонус за подписку на канал.")
         return
-    await call.message.answer(BONUS_TEXT, reply_markup=kb_with_bonus_channel())
+    await call.message.answer(f"Ты можешь получить бонус {config.Bonus_token} токенов, при подписке на наш канал!", reply_markup=kb_with_bonus_channel())
     
 @pay_router.callback_query(F.data == "check_bonus_sub")
 async def check_bonus_sub(call: CallbackQuery):
