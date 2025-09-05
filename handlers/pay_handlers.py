@@ -70,7 +70,7 @@ async def let_bonus_sub(call: CallbackQuery):
     if user.with_bonus:
         await call.message.answer("Кажется, вы уже получили бонус за подписку на канал.")
         return
-    await call.message.answer(f"Ты можешь получить бонус {config.Bonus_token} токенов, при подписке на наш канал!", reply_markup=kb_with_bonus_channel())
+    await call.message.answer(f"Ты можешь получить бонус {config.Bonus_token} токенов, при подписке на наш канал!", reply_markup=kb_with_bonus_channel(link=config.bonus_channel_link))
     
 @pay_router.callback_query(F.data == "check_bonus_sub")
 async def check_bonus_sub(call: CallbackQuery):

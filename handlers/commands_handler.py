@@ -67,9 +67,9 @@ async def start_pay(message: Message):
     text += f"В данный момент вам доступно {user.balance} токенов"
     if not user.with_bonus:
         text += f"\n\nВы можете получить бонусные {config.Bonus_token} токенов за подписку на наш канал!"
-        await message.answer(text, reply_markup=pay_kb(with_bonus=True))
+        await message.answer(text, reply_markup=pay_kb(with_bonus=True, packages=config.packages))
     else: 
-        await message.answer(text, reply_markup=pay_kb(with_bonus=False))   
+        await message.answer(text, reply_markup=pay_kb(with_bonus=False, packages=config.packages))   
 
 
 @command_router.message(Command("clear_context"))

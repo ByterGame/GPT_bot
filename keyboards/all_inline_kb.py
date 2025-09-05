@@ -1,6 +1,5 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import BONUS_CHANNEL_LINK, PACKAGES
-
+ 
 
 def set_mode_kb():
     kb_list = [
@@ -13,10 +12,10 @@ def set_mode_kb():
     return keyboard
 
 
-def pay_kb(with_bonus: bool):
+def pay_kb(with_bonus: bool, packages: list):
     kb_list = [[InlineKeyboardButton(text="Получить подписку в подарок", callback_data="pay_bonus_sub")]] if with_bonus else []
 
-    for index, package in enumerate(PACKAGES):
+    for index, package in enumerate(packages):
         kb_list.extend([
             [InlineKeyboardButton(text=f"купить {package['name']} за рубли", callback_data=f"buy_{index}_ruble")],
             [InlineKeyboardButton(text=f"купить {package['name']} за звезды", callback_data=f"buy_{index}_stars")]
@@ -38,9 +37,9 @@ def delete_referer_kb():
     ]
     return InlineKeyboardMarkup(inline_keyboard=kb_list)
 
-def kb_with_bonus_channel():
+def kb_with_bonus_channel(link: str):
     kb_list = [
-        [InlineKeyboardButton(text="Канал, на который надо подписаться", url=f"https://{BONUS_CHANNEL_LINK}")],
+        [InlineKeyboardButton(text="Канал, на который надо подписаться", url=f"https://{link}")],
         [InlineKeyboardButton(text="Проверить подписку", callback_data="check_bonus_sub")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)

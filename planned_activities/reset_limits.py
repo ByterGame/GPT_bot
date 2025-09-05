@@ -1,13 +1,11 @@
 from database.core import db
 from database.models import User
-import json
-from config import DEFAULT_GPT_4O_LIMIT
-                    
+import json                    
 
 
 async def reset_limits():
     db_repo = await db.get_repository()
-    
+    config = await db_repo.get_config()
     query = "SELECT * FROM users"
     async with db_repo.pool.acquire() as conn:
         records = await conn.fetch(query)
@@ -16,7 +14,7 @@ async def reset_limits():
         user = User(
             id=record['id'],
             context=json.loads(record['context']) if record['context'] else None,
-            gpt_4o_mini_requests=DEFAULT_GPT_4O_LIMIT,
+            gpt_4o_mini_requests=config.default_4o_limit,
             with_bonus=record['with_bonus'],
             balance=record['balance'],
             current_neural_network=record['current_neural_network'],
