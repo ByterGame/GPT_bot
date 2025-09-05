@@ -138,7 +138,7 @@ async def delete_referer(call: CallbackQuery):
     user = await db_repo.get_user(call.from_user.id)
     config = await db_repo.get_config()
     if user.referal_id:
-        text = (f"Теперь вы не являетесь рефералом другого пользователя, поэтому можете получить собственных рефералом распространняя ссылку: {BOT_LINK_FOR_REFERAL}?start={encode_ref(call.from_user.id)}\n"
+        text = (f"Теперь вы не являетесь рефералом другого пользователя, поэтому можете получить собственных рефералом распространняя ссылку: {config.bot_link_for_referal}?start={encode_ref(call.from_user.id)}\n"
                 f"Вы будете получать {config.Referal_bonus}% токенов за каждое пополнение ваших рефералов") 
         await call.message.answer(text)
         user.referal_id = None
