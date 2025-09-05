@@ -150,7 +150,6 @@ class DatabaseRepository:
                     Midjourney_mixed_price = record['Midjourney_mixed_price'],
                     Midjourney_fast_price = record['Midjourney_fast_price'],
                     Midjourney_turbo_price = record['Midjourney_turbo_price'],
-                    Midjourney_turbo_price = record['Midjourney_turbo_price'],
                     Audio_markup = record['Audio_markup'],
                     Dalle_price=record['Dalle_price'],
                     Bonus_token = record['Bonus_token'],
