@@ -29,7 +29,7 @@ async def set_mode(message: Message):
             f"- Search with links: инструмент, позволяющий быстро найти нужную информацию в интеренете и предоставить источники. 1 запрос за {config.search_with_links_price} токен(ов)\n\n"
             f"- MidJourney mixed: мощная нейросеть для генерации изображений. Параметр mixed предоставляет среднее качество генерации. 1 запрос за {config.Midjourney_mixed_price} токен(ов)\n\n"
             f"- MidJourney fast: мощная нейросеть для генерации изображений. Параметр fast предоставляет хорошее качество генерации. 1 запрос за {config.Midjourney_fast_price} токен(ов)\n\n"
-            f"- MidJourney turbo: мощная нейросеть для генерации изображений. Параметр turbo предоставляет лучшее качество генерации. 1 запрос за {config.Midjourney_turpo_price} токен(ов)\n\n"
+            f"- MidJourney turbo: мощная нейросеть для генерации изображений. Параметр turbo предоставляет лучшее качество генерации. 1 запрос за {config.Midjourney_turbo_price} токен(ов)\n\n"
             f"- Вы также можете использовать аудио для общения. При использовании аудио любой запрос становится дороже на {config.Audio_markup} токен(ов)")
     await message.answer(text, reply_markup=set_mode_kb())
 
