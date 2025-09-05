@@ -2,6 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.exceptions import TelegramBadRequest
 from database.core import db
 from database.models import User
 from keyboards.admin_keyboards import configure_packages_kb, confirm_delete_kb, configure_admin_kb, configure_bonus_kb
@@ -170,11 +171,16 @@ async def configure_admin(message: Message):
     db_repo = await db.get_repository()
     admins_id = await db_repo.get_admins()
     for id in admins_id:
-        chat = await bot.get_chat(id)
-        if chat:
+        try:
+            chat = await bot.get_chat(id)
             text += f"id: {id}, tag/name: {'@' + chat.username if chat.username else chat.first_name}\n"
-        else:
-            text += f"id: {id}. Бот не может получить другие данные этого пользователя, возможно у него не начат чат с ботом.\n"
+        except TelegramBadRequest as e:
+            if "chat not found" in str(e):
+                text += f"id: {id}. Бот не может получить данные этого пользователя/чата.\n"
+            else:
+                text += f"id: {id}. Ошибка при получении данных: {e}\n"
+        except Exception as e:
+            text += f"id: {id}. Неизвестная ошибка: {e}\n"
     await message.answer(text, reply_markup=configure_admin_kb())
 
 

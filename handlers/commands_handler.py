@@ -1,6 +1,7 @@
 from datetime import datetime,timedelta
 from aiogram import Router, F
 from aiogram.filters import Command
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, CallbackQuery
 from keyboards.all_inline_kb import set_mode_kb, pay_kb, delete_referer_kb 
 from database.core import db
@@ -92,30 +93,38 @@ async def let_referal_info_command(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
     config = await db_repo.get_config()
+    
     if user.referal_id:
-        referal = await bot.get_chat(user.referal_id)
-        if referal:
+        try:
+            referal = await bot.get_chat(user.referal_id)
             text = (f"Сейчас вы являетесь рефералом пользователя {'@' + referal.username if referal.username else referal.first_name}.\n\n"
                     "Вы не можете иметь своих рефералов пока сами являетесь рефералом.")
-        else:
+        except TelegramBadRequest:
             text = ("Сейчас вы являетесь рефералом пользователя, о котором нет актуальной информации.\n\nВы не можете иметь своих рефералов пока сами являетесь рефералом.")
         await message.answer(text, reply_markup=delete_referer_kb())
     else:
         text = (f"Сейчас вы не являетесь чьм-либо рефералом, поэтому можете распространять свою ссылку для привлечения.\n\n"
                  f"За каждое пополнение вашего реферала вы будете получать {config.Referal_bonus}% бонусных токенов от размера пополения.\n\n"
                  f"Ваша персональная ссылка: {config.bot_link_for_referal}?start={encode_ref(message.from_user.id)}")
+        
         referals = await db_repo.get_referals(user.id)
         if referals:
-            text += ("\n\nВаши текущие рефералы:\n")
+            text += "\n\nВаши текущие рефералы:\n"
             unknown_referal = 0
+            known_referals = []
+            
             for referal in referals:
-                referal_chat = await bot.get_chat(referal.id)
-                if referal_chat:
-                    text += (f"{'@' + referal_chat.username if referal_chat.username else referal_chat.first_name}\n")
-                else:
+                try:
+                    referal_chat = await bot.get_chat(referal.id)
+                    known_referals.append(f"{'@' + referal_chat.username if referal_chat.username else referal_chat.first_name}")
+                except TelegramBadRequest:
                     unknown_referal += 1
+            
+            if known_referals:
+                text += "\n".join(known_referals) + "\n"
             if unknown_referal:
-                text += f"Также у вас есть {unknown_referal} реферал(ов), о которых сейчас нет информации"            
+                text += f"Также у вас есть {unknown_referal} реферал(ов), о которых сейчас нет информации"
+        
         await message.answer(text)
 
 
@@ -125,28 +134,39 @@ async def let_referal_info_call(call: CallbackQuery):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
     config = await db_repo.get_config()
+    
     if user.referal_id:
-        referal = await bot.get_chat(user.referal_id)
-        text = (f"Сейчас вы являетесь рефералом пользователя {'@' + referal.username if referal.username else referal.first_name}.\n\n"
-                "Вы не можете иметь своих рефералов пока сами являетесь рефералом.")
+        try:
+            referal = await bot.get_chat(user.referal_id)
+            text = (f"Сейчас вы являетесь рефералом пользователя {'@' + referal.username if referal.username else referal.first_name}.\n\n"
+                    "Вы не можете иметь своих рефералов пока сами являетесь рефералом.")
+        except TelegramBadRequest:
+            text = ("Сейчас вы являетесь рефералом пользователя, о котором нет актуальной информации.\n\nВы не можете иметь своих рефералов пока сами являетесь рефералом.")
         await call.message.answer(text, reply_markup=delete_referer_kb())
     else:
         text = (f"Сейчас вы не являетесь чьм-либо рефералом, поэтому можете распространять свою ссылку для привлечения.\n\n"
                  f"За каждое пополнение вашего реферала вы будете получать {config.Referal_bonus}% бонусных токенов от размера пополения.\n\n"
                  f"Ваша персональная ссылка: {config.bot_link_for_referal}?start={encode_ref(call.from_user.id)}")
+        
         referals = await db_repo.get_referals(user.id)
         if referals:
-            text += ("\n\nВаши текущие рефералы:\n")
+            text += "\n\nВаши текущие рефералы:\n"
             unknown_referal = 0
+            known_referals = []
+            
             for referal in referals:
-                referal_chat = await bot.get_chat(referal.id)
-                if referal_chat:
-                    text += (f"{'@' + referal_chat.username if referal_chat.username else referal_chat.first_name}\n")
-                else:
+                try:
+                    referal_chat = await bot.get_chat(referal.id)
+                    known_referals.append(f"{'@' + referal_chat.username if referal_chat.username else referal_chat.first_name}")
+                except TelegramBadRequest:
                     unknown_referal += 1
+            
+            if known_referals:
+                text += "\n".join(known_referals) + "\n"
             if unknown_referal:
-                text += f"Также у вас есть {unknown_referal} реферал(ов), о которых сейчас нет информации" 
-        await call.message.answer(text) 
+                text += f"Также у вас есть {unknown_referal} реферал(ов), о которых сейчас нет информации"
+        
+        await call.message.answer(text)
 
 
 @command_router.callback_query(F.data=="delete_referer")
