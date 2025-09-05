@@ -8,7 +8,7 @@ from database.core import db
 from datetime import datetime
 from keyboards.all_inline_kb import mj_kb
 from utils.download_photo import download_photo
-from config import MIDJOURNEY_MIXED_PRICE
+
 
 
 midjourney_router = Router()
@@ -22,6 +22,7 @@ class VariationsState(StatesGroup):
 async def send_variation_request(message: Message, state: FSMContext):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
+    config = await db_repo.get_config()
     proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
     data = await state.get_data()
     payload = {
@@ -44,7 +45,7 @@ async def send_variation_request(message: Message, state: FSMContext):
     image_url = await poll_task(task_id, message.from_user.id)
 
     if image_url:
-        user.balance -= MIDJOURNEY_MIXED_PRICE
+        user.balance -= config.Midjourney_mixed_price
         photo_file = await download_photo(image_url, task_id)
         if photo_file:
             await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
@@ -65,7 +66,8 @@ async def variations_handler(call: CallbackQuery, state: FSMContext):
     await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
-    if user.balance < MIDJOURNEY_MIXED_PRICE:
+    config = await db_repo.get_config()
+    if user.balance < config.Midjourney_mixed_price:
         await call.message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
         return
     data = call.data.split('_')
@@ -86,7 +88,8 @@ async def upscale_handler(call: CallbackQuery):
     await call.answer()
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
-    if user.balance < MIDJOURNEY_MIXED_PRICE:
+    config = await db_repo.get_config()
+    if user.balance < config.Midjourney_mixed_price:
         await call.message.answer("Кажется у вас закончилась подписка, вы всегда можете продлить ее использовав команду /pay")
         return
     proc_msg = await call.message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
@@ -116,7 +119,7 @@ async def upscale_handler(call: CallbackQuery):
         else:
             await call.message.answer((f"Кажется, что скачивание изображения занимает немного больше времени...\n"
                                        f"Вы можете посмотреть и скачать его сами в оригинальном качестве по ссылке\n{image_url}"))
-        user.balance -= MIDJOURNEY_MIXED_PRICE
+        user.balance -= config.Midjourney_mixed_price
         await db_repo.update_user(user)
     else:
         await call.message.answer("Произошла ошибка, попробуйте позже!")

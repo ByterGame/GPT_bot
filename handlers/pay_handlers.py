@@ -1,7 +1,7 @@
 import asyncio
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
-from config import PACKAGES, BONUS_TEXT, BONUS_CHANNEL_ID, BONUS_TOKEN, REFERAL_BONUS
+from config import BONUS_TEXT
 from database.core import db
 from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel
 from create_bot import bot
@@ -15,8 +15,9 @@ pay_router = Router()
 async def let_pay_message(call: CallbackQuery):
     await call.answer()
     db_repo = await db.get_repository()
+    config = await db_repo.get_config()
     data = call.data.split("_") # ["buy", index, currecy_type]
-    package = PACKAGES[int(data[1])]
+    package = config.packages[int(data[1])]
     if data[2] == "stars":
         await call.message.answer_invoice(
             title=f"Пакет {package['name']}",
@@ -44,14 +45,15 @@ async def pre_checkout(pre_checkout_query: PreCheckoutQuery):
 async def successful_payment(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
+    config = await db_repo.get_config()
     payload = message.successful_payment.invoice_payload.split('_') # [index, user_id]
-    package = PACKAGES[int(payload[0])]
+    package = config.packages[int(payload[0])]
     user.balance += package['token_count']
     text = (f"Спасибо за покупку!\n\nНа ваш баланс было начислено {package['token_count']} токенов. Сейчас у вас {user.balance} токенов!")
     if user.referal_id:
         referal = await db_repo.get_user(user.referal_id)
         referal.balance += (package['token_count'] * 0.1)
-        text += (f"Мы также начислили бонус {int(package['token_count'] * REFERAL_BONUS / 100)} токенов вашему рефереру.")
+        text += (f"Мы также начислили бонус {int(package['token_count'] * config.Referal_bonus / 100)} токенов вашему рефереру.")
         await db_repo.update_user(referal)
         await message.answer(text, reply_markup=referal_kb())
     else:
@@ -73,9 +75,11 @@ async def let_bonus_sub(call: CallbackQuery):
 @pay_router.callback_query(F.data == "check_bonus_sub")
 async def check_bonus_sub(call: CallbackQuery):
     await call.answer()
+    db_repo = await db.get_repository()
+    config = await db_repo.get_config()
     try:
         member = await bot.get_chat_member(
-            chat_id=BONUS_CHANNEL_ID,
+            chat_id=config.bonus_channel_id,
             user_id=call.from_user.id
         )
         
@@ -85,11 +89,11 @@ async def check_bonus_sub(call: CallbackQuery):
         
         if member.status in valid_statuses:
             await call.message.edit_text(
-                f"✅ Отлично! Вы подписаны. Сейчас добавим к вашему балансу {BONUS_TOKEN} токенов!"
+                f"✅ Отлично! Вы подписаны. Сейчас добавим к вашему балансу {config.Bonus_token} токенов!"
             )
-            db_repo = await db.get_repository()
+            
             user = await db_repo.get_user(call.from_user.id)
-            user.balance += BONUS_TOKEN
+            user.balance += config.Bonus_token
             user.with_bonus = True
             await db_repo.update_user(user)
             await call.message.answer(f"Ваш текущий баланс {user.balance}")

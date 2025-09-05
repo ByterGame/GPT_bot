@@ -2,15 +2,13 @@ from aiogram.types import (KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRem
                            InlineKeyboardButton, InlineKeyboardMarkup)
 
 
-def get_admin_kb(is_admin: bool):
-    if is_admin:
-        kb_list = [
-            [KeyboardButton(text="Настроить пакеты")],
-            [KeyboardButton(text="Добавить/удалить админа")],
-            [KeyboardButton(text="Настроить бонусы")]
-        ]
-        return ReplyKeyboardMarkup(keyboard=kb_list, resize_keyboard=True, one_time_keyboard=False, is_persistent=True)
-    return ReplyKeyboardRemove()
+def get_admin_kb():
+    kb_list = [
+        [KeyboardButton(text="Настроить пакеты")],
+        [KeyboardButton(text="Добавить/удалить админа")],
+        [KeyboardButton(text="Настроить бонусы")]
+    ]
+    return ReplyKeyboardMarkup(keyboard=kb_list, resize_keyboard=True, one_time_keyboard=False, is_persistent=True)
 
 
 def configure_packages_kb():

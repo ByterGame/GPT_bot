@@ -4,7 +4,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from database.core import db
 from database.models import User
-from config import PACKAGES, BONUS_CHANNEL_LINK, BONUS_CHANNEL_ID, BONUS_TOKEN, REFERAL_BONUS
 from keyboards.admin_keyboards import configure_packages_kb, confirm_delete_kb, configure_admin_kb, configure_bonus_kb
 from create_bot import bot
 
@@ -33,7 +32,9 @@ async def is_admin(message: Message):
 @admin_router.message(F.text=="Настроить пакеты", is_admin)
 async def configure_packages(message: Message):
     text = ("Сейчас доступны следующие пакеты:\n")
-    for index, package in enumerate(PACKAGES):
+    db_repo = await db.get_repository()
+    config = await db_repo.get_config()
+    for index, package in enumerate(config.packages):
         text += (f"{index + 1}) {package['name']} - {package['token_count']} токенов за {package['fiat_price']} рублей или {package['stars_price']} звезд\n\n")
     await message.answer(text, reply_markup=configure_packages_kb())
 
@@ -51,8 +52,10 @@ async def change_package(call: CallbackQuery, state: FSMContext):
 @admin_router.message(AdminStates.select_package_to_change, is_admin)
 async def select_package_to_change(message: Message, state: FSMContext):
     try:
+        db_repo = await db.get_repository()
+        config = await db_repo.get_config()
         index = int(message.text) - 1
-        package = PACKAGES[index]
+        package = config.packages[index]
         text = (f"Вы хотите изменить пакет \"{package['name']}\"? Если это так, то в следующем сообщении укажите следующие данные в следующем формате\n"
                 f"&ИМЯ ПАКЕТА& - &КОЛ-ВО ТОКЕНОВ& - &ЦЕНА В РУБЛЯХ& - &ЦЕНА В ЗВЕЗДАХ&\n\n"
                 f"<b>Пример:</b> \"Малый - 500 - 250 - 350\". Тут я изменил цену пакета."
@@ -68,15 +71,17 @@ async def select_package_to_change(message: Message, state: FSMContext):
 @admin_router.message(AdminStates.change_package, is_admin)
 async def change_package(message: Message, state: FSMContext):
     try:
+        db_repo = await db.get_repository()
+        config = await db_repo.get_config()
         data = await state.get_data()
-        package = PACKAGES[data['index']]
         new_package = message.text.split("-")  # [Имя, токены, цена рубли, цена звезды]
-        package['name'] = new_package[0].strip()
-        package['token_count'] = int(new_package[1])
-        package['fiat_price'] = int(new_package[2])
-        package['stars_price'] = int(new_package[3])
+        config.packages[data['index']]['name'] = new_package[0].strip()
+        config.packages[data['index']]['token_count'] = int(new_package[1])
+        config.packages[data['index']]['fiat_price'] = int(new_package[2])
+        config.packages[data['index']]['stars_price'] = int(new_package[3])
         await message.answer("Параметры пакета успешно изменены!")
         await state.clear()
+        await db_repo.update_config(config)
     except Exception as e:
         await message.answer(f"ошибка {e}.\n\nПопробуйте снова")
 
@@ -94,8 +99,10 @@ async def delete_package(call: CallbackQuery, state: FSMContext):
 @admin_router.message(AdminStates.select_package_to_delete, is_admin)
 async def select_package_to_delete(message: Message):
     try:
+        db_repo = await db.get_repository()
+        config = await db_repo.get_config()
         index = int(message.text) - 1
-        package = PACKAGES[index]
+        package = config.packages[index]
         text = (f"Вы хотите удалить пакет \"{package['name']}\"? Если это так, то нажмите на кнопку ниже\n"
                 "Для отмены используй команду /cancel")
         await message.answer(text, reply_markup=confirm_delete_kb(index))
@@ -107,11 +114,13 @@ async def select_package_to_delete(message: Message):
 async def confirm_delete(call: CallbackQuery, state: FSMContext):
     await call.answer()
     try:
-        global PACKAGES
+        db_repo = await db.get_repository()
+        config = await db_repo.get_config()
         index = int(call.data.split('_')[2])
-        del PACKAGES[index]
-        await call.message.answer(f'Пакет "{PACKAGES[index]['name']}" был удален')
+        del config.packages[index]
+        await call.message.answer(f'Пакет "{config.packages[index]['name']}" был удален')
         await state.clear()
+        await db_repo.update_config(config)
     except Exception as e:
         await call.message.answer(f"ошибка {e}.\n\nПопробуйте снова")
 
@@ -132,7 +141,8 @@ async def info_about_add_package(call: CallbackQuery, state: FSMContext):
 @admin_router.message(AdminStates.add_package, is_admin)
 async def add_package(message: Message, state: FSMContext):
     try:
-        global PACKAGES
+        db_repo = await db.get_repository()
+        config = await db_repo.get_config()
         data: list[str] = message.text.split('-')  # [Имя, токены, цена рубли, цена звезды, номер в списке(optional)]
         text = (f'Был добавлен пакет {data[0].strip()}, количество токенов - {data[1].strip()} за {data[2].strip()} рублей или {data[3].strip()} звезд')
         if len(data) == 5: # Есть желаемый номер
@@ -143,12 +153,13 @@ async def add_package(message: Message, state: FSMContext):
                 "fiat_price": int(data[2]),
                 "stars_price": int(data[3])
             }
-            PACKAGES.insert(int(data[4]) - 1, new_package)
+            config.packages.insert(int(data[4]) - 1, new_package)
         else:
-            PACKAGES.append({"name": data[0].strip(), "token_count": int(data[1]), "fiat_price": int(data[2]), "stars_price": int(data[3])})
+            config.packages.append({"name": data[0].strip(), "token_count": int(data[1]), "fiat_price": int(data[2]), "stars_price": int(data[3])})
 
         await message.answer(text)
         await state.clear()
+        await db_repo.update_config(config)
     except Exception as e:
         await message.answer(f"ошибка {e}.\n\nПопробуйте снова")
 
@@ -244,10 +255,11 @@ async def info_about_change_channel(call: CallbackQuery, state: FSMContext):
 @admin_router.message(AdminStates.change_channel, is_admin)
 async def change_channel(message: Message, state: FSMContext):
     try:
-        global BONUS_CHANNEL_LINK, BONUS_CHANNEL_ID
+        db_repo = await db.get_repository()
+        config = await db_repo.get_config()
         data = message.text.split('-')  # [ссылка, id, флаг сброса]
-        BONUS_CHANNEL_LINK = data[0].strip()
-        BONUS_CHANNEL_ID = int('-100' + data[1].strip())
+        config.bonus_channel_link = data[0].strip()
+        config.bonus_channel_id = int('-100' + data[1].strip())
         if int(data[2]):
             db_repo = await db.get_repository()
             need_reset_id = await db_repo.get_with_bonus()
@@ -262,6 +274,7 @@ async def change_channel(message: Message, state: FSMContext):
             await db_repo.update_user(user)
         await message.answer("Настройки изменены, вы можете проверить работу по команде /pay")
         await state.clear()
+        await db_repo.update_config(config)
     except Exception as e:
         await message.answer(f"Ошибка {e}. Убедитесь, что вы передаете команду в нужном формате")
 
@@ -278,11 +291,13 @@ async def info_about_change_bonus_for_sub(call: CallbackQuery, state: FSMContext
 @admin_router.message(AdminStates.change_bonus_for_sub, is_admin)
 async def change_bonus_for_sub(message: Message, state: FSMContext):
     try:
-        global BONUS_TOKEN
+        db_repo = await db.get_repository()
+        config = await db_repo.get_config()
         new_bonus = int(message.text)
-        BONUS_TOKEN = new_bonus
-        await message.answer(f"Теперь пользователи будут получать бонус {BONUS_TOKEN} токенов за подписку на канал")
+        config.Bonus_token = new_bonus
+        await message.answer(f"Теперь пользователи будут получать бонус {config.Bonus_token} токенов за подписку на канал")
         await state.clear()
+        await db_repo.update_config(config)
     except Exception as e:
         await message.answer(f"Ошибка {e}. Убедитесь, что вы вводите одно число без пробелов")
 
@@ -290,8 +305,10 @@ async def change_bonus_for_sub(message: Message, state: FSMContext):
 @admin_router.callback_query(F.data=="change_referal_bonus")
 async def info_about_change_referal_bonus(call: CallbackQuery, state: FSMContext):
     await call.answer()
+    db_repo = await db.get_repository()
+    config = await db_repo.get_config()
     text = (f"Вы можете изменить бонус, который получает человек с пополнения своих рефералов.\n"
-            f"Сейчас это {REFERAL_BONUS}% с каждого пополнения.\n"
+            f"Сейчас это {config.Referal_bonus}% с каждого пополнения.\n"
             "Просто отправьте новый процент бонуса в следующем сообщении и я установлю его!\n"
             "Для отмены используй команду /cancel")
     await call.message.answer(text)
@@ -301,10 +318,12 @@ async def info_about_change_referal_bonus(call: CallbackQuery, state: FSMContext
 @admin_router.message(AdminStates.change_referal_bonus, is_admin)
 async def change_referal_bonus(message: Message, state: FSMContext):
     try:
-        global REFERAL_BONUS
+        db_repo = await db.get_repository()
+        config = await db_repo.get_config()
         new_bonus = int(message.text)
-        REFERAL_BONUS = new_bonus
-        await message.answer(f"Теперь пользователи будут получать бонус {REFERAL_BONUS}% токенов за каждое пополнение своих рефералов")
+        config.Referal_bonus = new_bonus
+        await message.answer(f"Теперь пользователи будут получать бонус {config.Referal_bonus}% токенов за каждое пополнение своих рефералов")
         await state.clear()
+        await db_repo.update_config(config)
     except Exception as e:
         await message.answer(f"Ошибка {e}. Убедитесь, что вы вводите одно число без пробелов")

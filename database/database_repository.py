@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Optional
 from database import create_pool
-from database.models import User
+from database.models import User, config_data
 from asyncpg import Pool
 
 
@@ -130,4 +130,86 @@ class DatabaseRepository:
         for record in rows:
             need_id.append(record['id'])
         return need_id
+    
+
+    async def get_config(self) -> config_data:
+        query = "SELECT * FROM config_data WHERE id = $1"
+        
+        async with self.pool.acquire() as conn:
+            record = await conn.fetchrow(query, 1)
+            if record:
+                packages = json.loads(record['packages']) if record['packages'] else None
+
+                return config_data(
+                    id=record['id'],
+                    packages=packages,
+                    GPT_4o_mini_price = record['GPT_4o_mini_price'],
+                    GPT_5_text_price = record['GPT_5_text_price'],
+                    GPT_5_vision_price = record['GPT_5_vision_price'],
+                    Whisper_price = record['Whisper_price'],
+                    Midjourney_mixed_price = record['Midjourney_mixed_price'],
+                    Midjourney_fast_price = record['Midjourney_fast_price'],
+                    Midjourney_turpo_price = record['Midjourney_turpo_price'],
+                    Midjourney_turpo_price = record['Midjourney_turpo_price'],
+                    Audio_markup = record['Audio_markup'],
+                    Dalle_price=record['Dalle_price'],
+                    Bonus_token = record['Bonus_token'],
+                    Referal_bonus = record['Referal_bonus'],
+                    bonus_channel_link = record['bonus_channel_link'],
+                    bot_link_for_referal = record['bot_link_for_referal'],
+                    bonus_channel_id = record['bonus_channel_id'],
+                    default_4o_limit = record['default_4o_limit'],
+                    search_with_links_price=record['search_with_links_price']
+                )
+            logging.warning(f"config с id=1 не найден в БД")
+            return None
+    
+
+    async def update_config(self, new_config: config_data):
+        query = """
+        UPDATE config_data
+        SET 
+            packages = $1,
+            GPT_4o_mini_price = $2,
+            GPT_5_text_price = $3,
+            GPT_5_vision_price = $4,
+            Whisper_price = $5,
+            Midjourney_mixed_price = $6,
+            Midjourney_fast_price = $7,
+            Midjourney_turpo_price = $8,
+            Audio_markup = $9,
+            Bonus_token = $10,
+            Referal_bonus = $11,
+            bonus_channel_link = $12,
+            bot_link_for_referal = $13,
+            bonus_channel_id = $14,
+            default_4o_limit = $15,
+            Dalle_price = $16,
+            search_with_links_price = $17
+        WHERE id = $18
+        """
+        
+        async with self.pool.acquire() as conn:
+            await conn.execute(
+                query,
+                json.dumps(new_config.packages) if new_config.packages else "",
+                new_config.GPT_4o_mini_price,
+                new_config.GPT_5_text_price,
+                new_config.GPT_5_vision_price,
+                new_config.Whisper_price,
+                new_config.Midjourney_mixed_price,
+                new_config.Midjourney_fast_price,
+                new_config.Midjourney_turpo_price,
+                new_config.Midjourney_turpo_price,
+                new_config.Audio_markup,
+                new_config.Bonus_token,
+                new_config.Referal_bonus,
+                new_config.bonus_channel_link,
+                new_config.bot_link_for_referal,
+                new_config.bonus_channel_id,
+                new_config.default_4o_limit,
+                new_config.Dalle_price,
+                new_config.search_with_links_price,
+                new_config.id
+            )
     

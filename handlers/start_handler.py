@@ -16,7 +16,7 @@ start_router = Router()
 async def start_bot(message: Message): 
     args = message.text.split()
     
-    await message.answer(START_MESSAGE, reply_markup=get_admin_kb(message.from_user.id))
+    await message.answer(START_MESSAGE)
     db_repo = await db.get_repository()
     
     new_user = User(id=message.from_user.id)
@@ -30,4 +30,7 @@ async def start_bot(message: Message):
         logging.info(f"Добавлен новый пользователь id: {new_user.id}")
     else:
         logging.info(f"Пользователь с id {new_user.id} уже существует")
+        user = await db_repo.get_user(message.from_user.id)
+        if user.is_admin:
+            await message.answer("Вы являетесь администратором, для взаимодействия с настройками бота воспользуйтесь клавиатурой ниже.", reply_markup=get_admin_kb())
 

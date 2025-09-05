@@ -1,9 +1,11 @@
 import asyncpg
 from database.database_repository import DatabaseRepository
 
+
 class Database:
     def __init__(self):
         self._repository = None
+        self.config = None
 
     async def connect(self):
         self._repository = await DatabaseRepository.connect()
@@ -15,3 +17,5 @@ class Database:
         return self._repository
 
 db = Database()
+
+

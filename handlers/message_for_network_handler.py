@@ -9,10 +9,7 @@ from neural_networks.MidJourney import send_prompt, poll_task
 from database.core import db
 from datetime import datetime
 from create_bot import bot
-from config import (BOT_TOKEN, GOOGLE_API_KEY, CX_ID, DEFAULT_PROMPT,
-                    DALLE_PRICE, WHISPER_PRICE, GPT_5_TEXT_PRICE, WEB_SEARCH_PRICE,
-                    GPT_4O_MINI_PRICE, GPT_5_VISION_PRICE, MIDJOURNEY_FAST_PRICE,
-                    MIDJOURNEY_MIXED_PRICE, MIDJOURNEY_TURBO_PRICE)
+from config import (BOT_TOKEN, GOOGLE_API_KEY, CX_ID, DEFAULT_PROMPT)
 from collections import defaultdict
 from asyncio import sleep
 from utils.text_utils import safe_send_message
@@ -29,6 +26,7 @@ album_buffer = defaultdict(list)
 @general_router.message(F.media_group_id)
 async def handle_album(message: Message):
     db_repo = await db.get_repository()
+    config = await db_repo.get_config()
     album_id = message.media_group_id
     album_buffer[album_id].append(message)
 
@@ -44,7 +42,7 @@ async def handle_album(message: Message):
         await messages[0].answer(f"Выбранная нейросеть не подходит для анализа изображений.\n\nСейчас вы используете {NEURAL_NETWORKS[user.current_neural_network]}")
         return
 
-    if user.balance <= GPT_5_VISION_PRICE:
+    if user.balance <= config.GPT_5_vision_price:
         await messages[0].answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
         return
 
@@ -58,7 +56,7 @@ async def handle_album(message: Message):
             url = f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_info.file_path}"
             image_urls.append(url)
 
-    user.balance -= GPT_5_VISION_PRICE
+    user.balance -= config.GPT_5_vision_price
 
     text = messages[0].caption or ""
     try:
@@ -85,10 +83,10 @@ async def handle_album(message: Message):
 async def handle_audio_message(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
-
+    config = await db_repo.get_config()
     neural_index = user.current_neural_network
 
-    if user.balance < WHISPER_PRICE:
+    if user.balance < config.Whisper_price:
         await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
         return
 
@@ -108,7 +106,7 @@ async def handle_audio_message(message: Message):
     except Exception as e:
         logging.warning(f"Не удалось удалить временный файл {local_path}: {e}")
 
-    user.balance -= WHISPER_PRICE
+    user.balance -= config.Whisper_price
     await db_repo.update_user(user)
 
     if neural_index != 4:
@@ -130,8 +128,9 @@ async def handle_audio_message(message: Message):
 async def simple_message_handler(message: Message):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
+    config = await db_repo.get_config()
     if user.current_neural_network == 0:
-        if user.gpt_4o_mini_requests < 1 and user.balance < GPT_4O_MINI_PRICE:
+        if user.gpt_4o_mini_requests < 1 and user.balance < config.GPT_4o_mini_price:
             await message.answer("Кажется твои бесплатные запросы на сегодня уже закончились, а токенов на платный запрос не хватает:( "
                                 "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся или купи токены по команде /pay")
             return
@@ -158,12 +157,12 @@ async def simple_message_handler(message: Message):
             if user.gpt_4o_mini_requests == 0:
                 await message.answer("Ваши бесплатные запросы на сегодня закончились. Следующие будут использовать токены.")
         else:
-            user.balance -= GPT_4O_MINI_PRICE
+            user.balance -= config.GPT_4o_mini_price
 
         user.context = new_context
         await db_repo.update_user(user)
     elif user.current_neural_network == 1:
-        if user.balance < GPT_5_TEXT_PRICE:
+        if user.balance < config.GPT_5_text_price:
             await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
             return
         if message.photo:
@@ -181,11 +180,11 @@ async def simple_message_handler(message: Message):
             await message.answer(reply)
         else:
             await safe_send_message(message, reply)
-        user.balance -= GPT_5_TEXT_PRICE
+        user.balance -= config.GPT_5_text_price
         user.context = new_context
         await db_repo.update_user(user)
     elif user.current_neural_network == 2:
-        if user.balance < GPT_5_VISION_PRICE:
+        if user.balance < config.GPT_5_vision_price:
             await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
             return
 
@@ -214,11 +213,11 @@ async def simple_message_handler(message: Message):
         else:
             await safe_send_message(message, reply)
         await processing_msg.delete()
-        user.balance -= GPT_5_VISION_PRICE
+        user.balance -= config.GPT_5_vision_price
         user.context = new_context
         await db_repo.update_user(user)
     elif user.current_neural_network == 3:
-        if user.balance < DALLE_PRICE:
+        if user.balance < config.Dalle_price:
             await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
             return
 
@@ -246,7 +245,7 @@ async def simple_message_handler(message: Message):
             await processing_msg.delete()
         else:
             await message.answer("Не удалось сгенерировать изображение :(")
-        user.balance -= DALLE_PRICE
+        user.balance -= config.Dalle_price
         user.context = new_context
         await db_repo.update_user(user)
     elif user.current_neural_network == 4:
@@ -254,7 +253,7 @@ async def simple_message_handler(message: Message):
     elif user.current_neural_network == 5:
         await handle_search_with_links(message, user)
     elif user.current_neural_network == 6:
-        if user.balance < MIDJOURNEY_MIXED_PRICE:
+        if user.balance < config.Midjourney_mixed_price:
             await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
             return
 
@@ -284,7 +283,7 @@ async def simple_message_handler(message: Message):
         task_id = result["task_id"]
         image_url = await poll_task(task_id, message.from_user.id)
         if image_url:
-            user.balance -= MIDJOURNEY_MIXED_PRICE
+            user.balance -= config.Midjourney_mixed_price
             photo_file = await download_photo(image_url, task_id)
             if photo_file:
                 await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
@@ -336,8 +335,8 @@ def web_search(query, max_results=3):
 
 async def handle_search_with_links(message: Message, user: User):
     db_repo = await db.get_repository()
-
-    if user.balance < WEB_SEARCH_PRICE:
+    config = await db_repo.get_config()
+    if user.balance < config.search_with_links_price:
         await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(")
         return
 
@@ -368,7 +367,7 @@ async def handle_search_with_links(message: Message, user: User):
         await safe_send_message(message, reply)
 
     user.context = new_context
-    user.balance -= WEB_SEARCH_PRICE
+    user.balance -= config.search_with_links_price
     await db_repo.update_user(user)
     await processing_msg.delete()
 
