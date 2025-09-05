@@ -26,7 +26,7 @@ class config_data(BaseModel):
     search_with_links_price: int = 5
     Midjourney_mixed_price: int = 15
     Midjourney_fast_price: int = 45
-    Midjourney_turpo_price: int = 70
+    Midjourney_turbo_price: int = 70
     Audio_markup: int = 2
     Bonus_token: int = 50
     Referal_bonus: int = 10
