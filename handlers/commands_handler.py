@@ -7,11 +7,14 @@ from database.core import db
 from create_bot import bot
 from aiogram.fsm.context import FSMContext
 from utils.encoding import encode_ref
-from config import (TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT, DEFAULT_PROMPT)
+from config import (TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT, DEFAULT_PROMPT,
+                    HELLO_MIDJOURENEY_FAST, HELLO_GPT_5_TEXT, HELLO_DALLE, HELLO_GPT_4O,
+                    HELLO_GPT_5_VISION, HELLO_MIDJOURENEY_MIXED, HELLO_MIDJOURENEY_TURBO, HELLO_SEARCH_WITH_LINKS, HELLO_WHISPER,
+                    CLEAR_CONTEXT, NEED_CANCEL, NO_NEED_CANCEL)
 
 
 command_router = Router()
-NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_full', 'set_gpt5_vision', 'set_dalle', 'set_whisper', 'set_web_search', 'set_midjorney']
+NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_text', 'set_gpt5_vision', 'set_dalle', 'set_whisper', 'set_web_search', 'set_midjorney']
 
 
 @command_router.message(Command("mode"))
@@ -40,17 +43,22 @@ async def set_mode(call: CallbackQuery):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(call.from_user.id)
     neural_index = NEURAL_NETWORKS.index(call.data)
-   
-    if neural_index == 2:
-        await call.message.answer("Вы выбрали нейросеть gpt5-vision\nЭта нейросеть хорошо анализирует изображения, постарайтесь не тратить свои запросы на вопросы, которые не содержат изображение")
+    
+    if neural_index == 0:
+        await call.message.answer(HELLO_GPT_4O)
+    elif neural_index == 1:
+        await call.message.answer(HELLO_GPT_5_TEXT)
+    elif neural_index == 2:
+        await call.message.answer(HELLO_GPT_5_VISION)
     elif neural_index == 3:
-        await call.message.answer("Вы выбрали DALLE - нейросеть для генерации изображений! Одним сообщением опишите, какую картинку вы хотите получить и ожидайте.")
+        await call.message.answer(HELLO_DALLE)
     elif neural_index == 4:
-        await call.message.answer("Вы выбрали whisper! Просто отправь мне телеграм аудио или файл, а я верну тебе его текстовую расшифровку!")
+        await call.message.answer(HELLO_WHISPER)
     elif neural_index == 5:
-        await call.message.answer("Вы выбрали поиск с ссылками! Просто напишите свой запрос и ожидайте.")
-    else:
-        await call.message.answer("Нейросеть выбрана успешно!")
+        await call.message.answer(HELLO_SEARCH_WITH_LINKS)
+    elif neural_index == 6:
+        await call.message.answer(HELLO_MIDJOURENEY_MIXED)
+    
     user.current_neural_network = neural_index
     await db_repo.update_user(user)
 
@@ -67,10 +75,8 @@ async def start_pay(message: Message):
     text += f"В данный момент вам доступно {user.balance} токенов"
     if not user.with_bonus:
         text += f"\n\nВы можете получить бонусные {config.Bonus_token} токенов за подписку на наш канал!"
-        await message.answer(text, reply_markup=pay_kb(with_bonus=True, packages=config.packages))
-    else: 
-        await message.answer(text, reply_markup=pay_kb(with_bonus=False, packages=config.packages))   
-
+    await message.answer(text, reply_markup=pay_kb(with_bonus=(not user.with_bonus), packages=config.packages))
+    
 
 @command_router.message(Command("clear_context"))
 async def clear_context(message: Message):
@@ -78,7 +84,7 @@ async def clear_context(message: Message):
     user = await db_repo.get_user(message.from_user.id)
     user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
     await db_repo.update_user(user)
-    await message.answer("Контекст очищен!")
+    await message.answer(CLEAR_CONTEXT)
 
 
 @command_router.message(Command("referal"))
@@ -128,6 +134,18 @@ async def let_referal_info_call(call: CallbackQuery):
         text = (f"Сейчас вы не являетесь чьм-либо рефералом, поэтому можете распространять свою ссылку для привлечения.\n\n"
                  f"За каждое пополнение вашего реферала вы будете получать {config.Referal_bonus}% бонусных токенов от размера пополения.\n\n"
                  f"Ваша персональная ссылка: {config.bot_link_for_referal}?start={encode_ref(call.from_user.id)}")
+        referals = await db_repo.get_referals(user.id)
+        if referals:
+            text += ("\n\nВаши текущие рефералы:\n")
+            unknown_referal = 0
+            for referal in referals:
+                referal_chat = await bot.get_chat(referal.id)
+                if referal_chat:
+                    text += (f"{'@' + referal_chat.username if referal_chat.username else referal_chat.first_name}\n")
+                else:
+                    unknown_referal += 1
+            if unknown_referal:
+                text += f"Также у вас есть {unknown_referal} реферал(ов), о которых сейчас нет информации" 
         await call.message.answer(text) 
 
 
@@ -185,7 +203,7 @@ async def show_refund_policy(message: Message):
 async def cancel(message: Message, state: FSMContext):
     if state.get_state():
         await state.clear()
-        await message.answer("Хорошо, скажи, если что-то понадобится!")
+        await message.answer(NEED_CANCEL)
     else:
-        await message.answer("Сейчас я ничего не ждал от тебя, можешь спокойно продолжать использование:)")
+        await message.answer(NO_NEED_CANCEL)
 

@@ -5,6 +5,7 @@ from database.core import db
 from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel
 from create_bot import bot
 from aiogram.exceptions import TelegramBadRequest
+from config import REMINDER
 
 
 pay_router = Router()
@@ -33,7 +34,7 @@ async def let_pay_message(call: CallbackQuery):
     await asyncio.sleep(240)
     user = await db_repo.get_user(call.from_user.id)
     if user.balance < 150: # цифра из головы, в будущем можно брать минимальный размер пакета минус 1 токен
-        call.message.answer("Ты уже на полпути к своим токенам! Я уверен, что смогу помочь тебе! Надеюсь ты продолжишь начатое!")
+        call.message.answer(REMINDER)
 
 
 @pay_router.pre_checkout_query()

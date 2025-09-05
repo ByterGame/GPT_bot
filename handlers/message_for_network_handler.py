@@ -9,7 +9,12 @@ from neural_networks.MidJourney import send_prompt, poll_task
 from database.core import db
 from datetime import datetime
 from create_bot import bot
-from config import (BOT_TOKEN, GOOGLE_API_KEY, CX_ID, DEFAULT_PROMPT)
+from config import (BOT_TOKEN, GOOGLE_API_KEY, CX_ID, DEFAULT_PROMPT, UNSUITED_NEURAL, NOT_ENOUGH_TOKEN,
+                    INTERIM_FOR_ALBUM, INACCESSIBLE_FILE, INTERIM_FOR_AUDIO, FREE_REQUESTS_RAN_OUT, 
+                    FREE_REQUESTS_RAN_OUT_AND_NOT_ENOUGH_BALANCE, INTERIM_FOR_TEXT, INTERIM_FOR_IMAGE,
+                    GENERATE_IMAGE, FAIL_GENERATE_IMAGE, MIDJOURNEY_WAIT, LONG_PROCESSING_MJ,
+                    INSTRUCTION_MJ, INTERIM_FOR_SEARCH_LINKS
+                    )
 from collections import defaultdict
 from asyncio import sleep
 from utils.text_utils import safe_send_message
@@ -39,14 +44,14 @@ async def handle_album(message: Message):
     user = await db_repo.get_user(messages[0].from_user.id)
 
     if user.current_neural_network != 2:
-        await messages[0].answer(f"Выбранная нейросеть не подходит для анализа изображений.\n\nСейчас вы используете {NEURAL_NETWORKS[user.current_neural_network]}")
+        await messages[0].answer(f"{UNSUITED_NEURAL}{NEURAL_NETWORKS[user.current_neural_network]}")
         return
 
     if user.balance <= config.GPT_5_vision_price:
-        await messages[0].answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
+        await messages[0].answer(NOT_ENOUGH_TOKEN)
         return
 
-    await messages[0].answer("Обрабатываю альбом...")
+    procces_msg: Message = await messages[0].answer(INTERIM_FOR_ALBUM)
 
     image_urls = []
     for msg in messages:
@@ -66,7 +71,7 @@ async def handle_album(message: Message):
             context=user.context if user.context else []
         )
     except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
-            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            await message.answer(INACCESSIBLE_FILE)
             user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
@@ -75,6 +80,7 @@ async def handle_album(message: Message):
         await messages[0].answer(reply)
     else:
         await safe_send_message(message, reply)
+    await procces_msg.delete()
     user.context = new_context
     await db_repo.update_user(user)
 
@@ -87,10 +93,16 @@ async def handle_audio_message(message: Message):
     neural_index = user.current_neural_network
 
     if user.balance < config.Whisper_price:
-        await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
+        await message.answer(NOT_ENOUGH_TOKEN)
         return
+    
+    if user.current_neural_network != 4:
+        price = await get_current_price(user.current_neural_network)
+        if user.balance < config.Whisper_price + price:
+            await message.answer(NOT_ENOUGH_TOKEN)
+            return
 
-    processing_msg = await message.answer("Преобразую аудио в текст...")
+    processing_msg = await message.answer(INTERIM_FOR_AUDIO)
 
     file_id = message.voice.file_id if message.voice else message.audio.file_id
 
@@ -106,8 +118,7 @@ async def handle_audio_message(message: Message):
     except Exception as e:
         logging.warning(f"Не удалось удалить временный файл {local_path}: {e}")
 
-    user.balance -= config.Whisper_price
-    await db_repo.update_user(user)
+    
 
     if neural_index != 4:
         fake_message = message.model_copy(update={"text": transcript})
@@ -120,6 +131,9 @@ async def handle_audio_message(message: Message):
     else:
         await safe_send_message(message, transcript)
 
+    user.balance -= config.Whisper_price
+    await db_repo.update_user(user)
+
     await processing_msg.delete()
 
 
@@ -131,19 +145,18 @@ async def simple_message_handler(message: Message):
     config = await db_repo.get_config()
     if user.current_neural_network == 0:
         if user.gpt_4o_mini_requests < 1 and user.balance < config.GPT_4o_mini_price:
-            await message.answer("Кажется твои бесплатные запросы на сегодня уже закончились, а токенов на платный запрос не хватает:( "
-                                "Попробуй задать свой вопрос завтра, когда твои запросы восстановятся или купи токены по команде /pay")
+            await message.answer(FREE_REQUESTS_RAN_OUT_AND_NOT_ENOUGH_BALANCE)
             return
         if message.photo:
-            await message.answer("Для анализа изображений выбери gpt5 vision")
+            await message.answer(UNSUITED_NEURAL)
             return
         
-        processing_msg = await message.answer("Думаю над твоим вопросом...")
+        processing_msg = await message.answer(INTERIM_FOR_TEXT)
         
         try:
             reply, new_context = gpt.chat_with_gpt4o_mini(message.text, user.context if user.context else [])
         except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
-            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            await message.answer(INACCESSIBLE_FILE)
             user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
@@ -155,7 +168,7 @@ async def simple_message_handler(message: Message):
         if user.gpt_4o_mini_requests > 0:
             user.gpt_4o_mini_requests -= 1
             if user.gpt_4o_mini_requests == 0:
-                await message.answer("Ваши бесплатные запросы на сегодня закончились. Следующие будут использовать токены.")
+                await message.answer(FREE_REQUESTS_RAN_OUT)
         else:
             user.balance -= config.GPT_4o_mini_price
 
@@ -163,16 +176,16 @@ async def simple_message_handler(message: Message):
         await db_repo.update_user(user)
     elif user.current_neural_network == 1:
         if user.balance < config.GPT_5_text_price:
-            await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
+            await message.answer(NOT_ENOUGH_TOKEN)
             return
         if message.photo:
-            await message.answer("Для анализа изображений выбери gpt5 vision")
+            await message.answer(UNSUITED_NEURAL)
             return
-        processing_msg = await message.answer("Думаю над твоим вопросом...")
+        processing_msg = await message.answer(INTERIM_FOR_TEXT)
         try:
             reply, new_context = gpt.chat_with_gpt5(message.text, user.context if user.context else [])
         except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
-            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            await message.answer(INACCESSIBLE_FILE)
             user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
@@ -185,10 +198,10 @@ async def simple_message_handler(message: Message):
         await db_repo.update_user(user)
     elif user.current_neural_network == 2:
         if user.balance < config.GPT_5_vision_price:
-            await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
+            await message.answer(NOT_ENOUGH_TOKEN)
             return
 
-        processing_msg = await message.answer("Обрабатываю изображение...")
+        processing_msg = await message.answer(INTERIM_FOR_IMAGE)
 
         image_url = []
         if message.photo:
@@ -203,7 +216,7 @@ async def simple_message_handler(message: Message):
                 context=user.context if user.context else []
             )
         except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
-            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            await message.answer(INACCESSIBLE_FILE)
             user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
@@ -218,14 +231,14 @@ async def simple_message_handler(message: Message):
         await db_repo.update_user(user)
     elif user.current_neural_network == 3:
         if user.balance < config.Dalle_price:
-            await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
+            await message.answer(NOT_ENOUGH_TOKEN)
             return
 
         if message.photo:
-            await message.answer("Для анализа изображений выбери gpt5 vision")
+            await message.answer(UNSUITED_NEURAL)
             return
         
-        processing_msg = await message.answer("Генерирую изображение...") 
+        processing_msg = await message.answer(GENERATE_IMAGE) 
 
         prompt = message.caption if message.caption else message.text
         try:
@@ -234,7 +247,7 @@ async def simple_message_handler(message: Message):
                 context=user.context if user.context else []
             )
         except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
-            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            await message.answer(INACCESSIBLE_FILE)
             user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
@@ -244,7 +257,7 @@ async def simple_message_handler(message: Message):
                 await message.answer_photo(url)
             await processing_msg.delete()
         else:
-            await message.answer("Не удалось сгенерировать изображение :(")
+            await message.answer(FAIL_GENERATE_IMAGE)
         user.balance -= config.Dalle_price
         user.context = new_context
         await db_repo.update_user(user)
@@ -254,15 +267,15 @@ async def simple_message_handler(message: Message):
         await handle_search_with_links(message, user)
     elif user.current_neural_network == 6:
         if user.balance < config.Midjourney_mixed_price:
-            await message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
+            await message.answer(NOT_ENOUGH_TOKEN)
             return
 
         if message.photo:
-            await message.answer("Для анализа изображений выбери gpt5 vision")
+            await message.answer(UNSUITED_NEURAL)
             return
         
         
-        proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
+        proc_msg = await message.answer(MIDJOURNEY_WAIT)
         
         payload = {
             "model": "midjourney",
@@ -288,17 +301,9 @@ async def simple_message_handler(message: Message):
             if photo_file:
                 await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
             else:
-                await message.answer((f"Кажется, что скачивание изображения занимает немного больше времени...\n"
-                                      f"Вы можете посмотреть и скачать его сами в оригинальном качестве по ссылке\n{image_url}"),
+                await message.answer((f"{LONG_PROCESSING_MJ}{image_url}"),
                                         reply_markup=mj_kb(task_id))
-            text = (
-                "🎨 <b>Как работать с кнопками V1-V4 и U1-U4?</b>\n\n"
-                "• <b>Кнопки V (Vary — Вариации)</b> — создают 4 новых варианта на основе выбранного изображения, сохраняя общий стиль. "
-                "Используйте, чтобы получить больше похожих вариантов. В следующем сообщении вы должны будете отправить сообщение, в котором скажете, нужно ли поправить какие-то детали или просто создать 4 картинки в том же стиле\n"
-                "• <b>Кнопки U (Upscale — Увеличение)</b> — улучшают качество и увеличивают разрешение конкретного изображения. Нажимайте, когда хотите получить финальный результат в высоком качестве.\n\n"
-                "💡 <b>Совет:</b> Сначала найдите лучший вариант через кнопки <b>V</b>, затем улучшите его кнопкой <b>U</b>!\n"
-                "<b>Важно!</b> За каждый результат, полученный с помощью кнопок вы будете тратить один запрос к MidJourney"
-            )
+            text = (INSTRUCTION_MJ)
             await message.answer(text)
             await proc_msg.delete()
             await db_repo.update_user(user)
@@ -337,11 +342,11 @@ async def handle_search_with_links(message: Message, user: User):
     db_repo = await db.get_repository()
     config = await db_repo.get_config()
     if user.balance < config.search_with_links_price:
-        await message.answer("Кажется у тебя нет подписки или твои запросы на сегодня закончились :(")
+        await message.answer(NOT_ENOUGH_TOKEN)
         return
 
     query = message.text
-    processing_msg = await message.answer("Ищу информацию в интернете...")
+    processing_msg = await message.answer(INTERIM_FOR_SEARCH_LINKS)
 
     sources = web_search(query)
 
@@ -356,7 +361,7 @@ async def handle_search_with_links(message: Message, user: User):
             context=user.context if user.context else []
         )
     except BadRequestError as e: # я тут за все время видел только ошибку того, что юрл от картинки на сервере телеграм устарел, так что вся обработка сводится к очистки контекста
-            await message.answer("Кажется один из файлов, которые ты отправлял мне ранее больше не доступен, поэтому мне придется очистить контекст нашей беседы. \nТвой запрос не спишется, попробуй отправить его запрос еще раз.")
+            await message.answer(INACCESSIBLE_FILE)
             user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
@@ -371,3 +376,21 @@ async def handle_search_with_links(message: Message, user: User):
     await db_repo.update_user(user)
     await processing_msg.delete()
 
+
+async def get_current_price(neural_index: int):
+    db_repo = await db.get_repository()
+    config = await db_repo.get_config()
+    if neural_index == 0:
+        return config.GPT_4o_mini_price
+    elif neural_index == 1:
+        return config.GPT_5_text_price
+    elif neural_index == 2:
+        return config.GPT_5_vision_price
+    elif neural_index == 3:
+        return config.Dalle_price
+    elif neural_index == 4:
+        return config.Whisper_price
+    elif neural_index == 5:
+        return config.search_with_links_price
+    elif neural_index == 6:
+        return config.Midjourney_mixed_price

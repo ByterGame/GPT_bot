@@ -8,7 +8,7 @@ from database.core import db
 from datetime import datetime
 from keyboards.all_inline_kb import mj_kb
 from utils.download_photo import download_photo
-
+from config import MIDJOURNEY_WAIT, LONG_PROCESSING_MJ, NOT_ENOUGH_TOKEN, VARIATIONS_MJ
 
 
 midjourney_router = Router()
@@ -23,7 +23,7 @@ async def send_variation_request(message: Message, state: FSMContext):
     db_repo = await db.get_repository()
     user = await db_repo.get_user(message.from_user.id)
     config = await db_repo.get_config()
-    proc_msg = await message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
+    proc_msg = await message.answer(MIDJOURNEY_WAIT)
     data = await state.get_data()
     payload = {
         "model": "midjourney",
@@ -50,8 +50,7 @@ async def send_variation_request(message: Message, state: FSMContext):
         if photo_file:
             await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
         else:
-            await message.answer((f"Кажется, что скачивание изображения занимает немного больше времени...\n"
-                                  f"Вы можете посмотреть и скачать его сами в оригинальном качестве по ссылке\n{image_url}"),
+            await message.answer((f"{LONG_PROCESSING_MJ}{image_url}"),
                                     reply_markup=mj_kb(task_id))
         await db_repo.update_user(user)
     else:
@@ -68,7 +67,7 @@ async def variations_handler(call: CallbackQuery, state: FSMContext):
     user = await db_repo.get_user(call.from_user.id)
     config = await db_repo.get_config()
     if user.balance < config.Midjourney_mixed_price:
-        await call.message.answer("Кажется у вас недостаточно токенов для запроса к текущей нейросети")
+        await call.message.answer(NOT_ENOUGH_TOKEN)
         return
     data = call.data.split('_')
     origin_task_id = data[1]
@@ -79,8 +78,7 @@ async def variations_handler(call: CallbackQuery, state: FSMContext):
     }
     await state.set_data(data)
     await state.set_state(VariationsState.wait_prompt)
-    await call.message.answer(("Вы решили создать новые 4 вариации на основе стиля и композиции выбранного изображения или воспользуйтесь командой /cancel, если передумали.\n"
-                                "Эта генерация потратит один из ваших запросов к MidJourney на сегодня"))
+    await call.message.answer(VARIATIONS_MJ)
     
 
 @midjourney_router.callback_query(F.data.contains("upscale"))
@@ -90,9 +88,9 @@ async def upscale_handler(call: CallbackQuery):
     user = await db_repo.get_user(call.from_user.id)
     config = await db_repo.get_config()
     if user.balance < config.Midjourney_mixed_price:
-        await call.message.answer("Кажется у вас закончилась подписка, вы всегда можете продлить ее использовав команду /pay")
+        await call.message.answer(NOT_ENOUGH_TOKEN)
         return
-    proc_msg = await call.message.answer("⏳ Отправил запрос в MidJourney, жди картинку... \n(Приблизительное время ожидания 40 секунд)")
+    proc_msg = await call.message.answer(MIDJOURNEY_WAIT)
     data = call.data.split('_')
     origin_task_id = data[1]
     index = data[0][-1]
@@ -117,8 +115,7 @@ async def upscale_handler(call: CallbackQuery):
         if photo_file:
             await call.message.answer_photo(photo=photo_file)
         else:
-            await call.message.answer((f"Кажется, что скачивание изображения занимает немного больше времени...\n"
-                                       f"Вы можете посмотреть и скачать его сами в оригинальном качестве по ссылке\n{image_url}"))
+            await call.message.answer((f"{LONG_PROCESSING_MJ}{image_url}"))
         user.balance -= config.Midjourney_mixed_price
         await db_repo.update_user(user)
     else:
