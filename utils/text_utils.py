@@ -8,7 +8,7 @@ from aiogram.exceptions import TelegramBadRequest
 
 ALLOWED_TAGS = {
     "b","strong","i","em","u","ins","s","strike","del",
-    "a","code","pre","blockquote","span", "p"
+    "a","code","pre","blockquote","span"
 }
 ALLOWED_ATTRS = {
     "a": {"href"},
@@ -70,6 +70,15 @@ class TelegramHTMLSanitizer(HTMLParser):
         if tag not in ALLOWED_TAGS:
             return
         if tag == "br":
+            self.out.append("\n")
+            return
+            
+        if tag == "p":
+            if self.out and self.out[-1] not in {"\n", "<br>"}:
+                self.out.append("\n\n")
+            return
+            
+        if tag == "html":
             return
         if tag in self.stack:
             while self.stack:

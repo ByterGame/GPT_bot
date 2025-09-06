@@ -7,7 +7,8 @@ def get_admin_kb():
         [KeyboardButton(text="Настроить пакеты")],
         [KeyboardButton(text="Добавить/удалить админа")],
         [KeyboardButton(text="Настроить бонусы")],
-        [KeyboardButton(text="Разослать объявление")]
+        [KeyboardButton(text="Разослать объявление")],
+        [KeyboardButton(text="Изменить цены на запросы")]
     ]
     return ReplyKeyboardMarkup(keyboard=kb_list, resize_keyboard=True, one_time_keyboard=False, is_persistent=True)
 
@@ -44,3 +45,14 @@ def configure_bonus_kb():
 
 def confirm_send_announcement_kb():
     return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Да, отправить", callback_data=f"confirm_send_announcement")]])
+
+
+def select_network_for_change_price_kb():
+    kb_list = [
+        [InlineKeyboardButton(text="gpt-4o mini", callback_data="change_gpt_4o_mini"), InlineKeyboardButton(text="gpt-5 text", callback_data="change_gpt5_text")],
+        [InlineKeyboardButton(text="gpt-5 vision", callback_data="change_gpt5_vision"), InlineKeyboardButton(text="DALL·E", callback_data="change_dalle")],
+        [InlineKeyboardButton(text="whisper", callback_data="change_whisper"), InlineKeyboardButton(text="Search with links", callback_data="change_web_search")],
+        [InlineKeyboardButton(text="MidJorney mixed", callback_data="change_midjorney_mixed"), InlineKeyboardButton(text="Аудио наценка", callback_data="change_audio_markup")]    
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
+    return keyboard

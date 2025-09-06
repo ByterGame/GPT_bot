@@ -5,7 +5,9 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from database.core import db
 from database.models import User
-from keyboards.admin_keyboards import configure_packages_kb, confirm_delete_kb, configure_admin_kb, configure_bonus_kb, confirm_send_announcement_kb
+from keyboards.admin_keyboards import (configure_packages_kb, confirm_delete_kb, configure_admin_kb, 
+                                       configure_bonus_kb, confirm_send_announcement_kb,
+                                       select_network_for_change_price_kb)
 from create_bot import bot
 import logging
 import asyncio
@@ -25,6 +27,7 @@ class AdminStates(StatesGroup):
     change_bonus_for_sub = State()
     change_referal_bonus = State()
     get_announcement_text = State()
+    change_price = State()
 
 
 admin_router = Router()
@@ -400,3 +403,69 @@ async def confirm_send_announcement(call: CallbackQuery):
     
     await call.message.edit_text(report)
 
+
+@admin_router.message(F.text=="Изменить цены на запросы")
+async def start_change_price(message: Message):
+    db_repo = await db.get_repository()
+    config = await db_repo.get_config()
+    text = ("Выбери нейронку, для которой хочешь поменять цену\n\n"
+            "Текущие цены:\n"
+            f"gpt 4o mini {config.GPT_4o_mini_price} токен(ов) за запрос\n"
+            f"gpt 5 text {config.GPT_5_text_price} токен(ов) за запрос\n"
+            f"gpt 5 vision {config.GPT_5_vision_price} токен(ов) за запрос\n"
+            f"Dalle {config.Dalle_price} токен(ов) за запрос\n"
+            f"whisper {config.Whisper_price} токен(ов) за запрос\n"
+            f"Search with links {config.search_with_links_price} токен(ов) за запрос\n"
+            f"Midjourney mixed {config.Midjourney_mixed_price} токен(ов) за запрос\n"
+            f"Midjourney fast {config.Midjourney_fast_price} токен(ов) за запрос\n"
+            f"Midjourney turbo {config.Midjourney_turbo_price} токен(ов) за запрос"
+            )
+    await message.answer("Выбери нейронку, для которой хочешь поменять цену:", reply_markup=select_network_for_change_price_kb())
+
+
+@admin_router.callback_query(F.data.startswith("change_"))
+async def select_new_price(call: CallbackQuery, state: FSMContext):
+    await call.answer()
+    network_name = call.data.replace("change_", "")
+    await state.set_data({"network_name": network_name})
+    await state.set_state(AdminStates.change_price)
+    await call.message.answer(f"Вы выбрали {network_name}.\nТеперь введите новую цену в токенах за запрос (одно число)\n\nДля отмены используй команду /cancel")
+
+
+@admin_router.message(AdminStates.change_price)
+async def change_price(message: Message, state: FSMContext):
+    try:
+        new_price = int(message.text)
+        data = await state.get_data()
+        network_name = data["network_name"]
+        db_repo = await db.get_repository()
+        config = await db_repo.get_config()
+
+        # я чет не придумал как от этого полотна избавиться
+        if network_name == "gpt_4o_mini":
+            config.GPT_4o_mini_price = new_price
+        elif network_name == "gpt5_text":
+            config.GPT_5_text_price = new_price
+        elif network_name == "gpt5_vision":
+            config.GPT_5_vision_price = new_price
+        elif network_name == "dalle":
+            config.Dalle_price = new_price
+        elif network_name == "whisper":
+            config.Whisper_price == new_price
+        elif network_name == "web_search":
+            config.search_with_links_price = new_price
+        elif network_name == "midjorney_mixed":
+            config.Midjourney_mixed_price = new_price
+        elif network_name == "midjorney_fast":
+            config.Midjourney_fast_price = new_price
+        elif network_name == "midjorney_turbo":
+            config.Midjourney_turbo_price = new_price
+        elif network_name == "audio_markup":
+            config.Audio_markup = new_price
+
+        await db_repo.update_config(config)
+        await message.answer("Цена успешно изменена!") 
+        await state.clear()
+
+    except Exception as e:
+        await message.answer(f"Ошибка {e}\n\nУбедитесь, что передаете одно число в сообщении без других символов")
