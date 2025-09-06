@@ -28,6 +28,7 @@ def select_pack_kb(packages: list, currency: str):
     kb_list = []
     for index, pack in enumerate(packages):
         kb_list.append([InlineKeyboardButton(text=f"{pack['name']}", callback_data=f"pack_{index}_{currency}")])
+    return InlineKeyboardMarkup(inline_keyboard=kb_list)
 
 def referal_kb():
     kb_list = [
