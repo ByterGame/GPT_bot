@@ -15,7 +15,7 @@ from config import (TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT, DEFAULT
 
 
 command_router = Router()
-NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_text', 'set_gpt5_vision', 'set_dalle', 'set_whisper', 'set_web_search', 'set_midjorney']
+NEURAL_NETWORKS = ['set_gpt_4o_mini', 'set_gpt5_text', 'set_gpt5_vision', 'set_dalle', 'set_whisper', 'set_web_search', 'set_midjorney_mixed', 'set_midjorney_fast', 'set_midjorney_turbo']
 
 
 @command_router.message(Command("mode"))
@@ -59,6 +59,10 @@ async def set_mode(call: CallbackQuery):
         await call.message.answer(HELLO_SEARCH_WITH_LINKS)
     elif neural_index == 6:
         await call.message.answer(HELLO_MIDJOURENEY_MIXED)
+    elif neural_index == 7:
+        await call.message.answer(HELLO_MIDJOURENEY_FAST)
+    elif neural_index == 8:
+        await call.message.answer(HELLO_MIDJOURENEY_TURBO)
     
     user.current_neural_network = neural_index
     await db_repo.update_user(user)

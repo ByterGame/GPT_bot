@@ -6,7 +6,8 @@ def set_mode_kb():
         [InlineKeyboardButton(text="gpt-4o mini", callback_data="set_gpt_4o_mini"), InlineKeyboardButton(text="gpt-5 text", callback_data="set_gpt5_text")],
         [InlineKeyboardButton(text="gpt-5 vision", callback_data="set_gpt5_vision"), InlineKeyboardButton(text="DALL·E", callback_data="set_dalle")],
         [InlineKeyboardButton(text="whisper", callback_data="set_whisper"), InlineKeyboardButton(text="Search with links", callback_data="set_web_search")],
-        [InlineKeyboardButton(text="MidJorney", callback_data="set_midjorney")]
+        [InlineKeyboardButton(text="MidJorney mixed", callback_data="set_midjorney_mixed"), InlineKeyboardButton(text="MidJorney fast", callback_data="set_midjorney_fast")],
+        [InlineKeyboardButton(text="MidJorney turbo", callback_data="set_midjorney_turbo")]
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard

@@ -256,7 +256,16 @@ async def simple_message_handler(message: Message):
         pass # Логика вынесена в отдельный хендлер
     elif user.current_neural_network == 5:
         await handle_search_with_links(message, user)
-    elif user.current_neural_network == 6:
+    elif 6 <= user.current_neural_network <= 8:
+        if user.current_neural_network == 6:
+            price = config.Midjourney_mixed_price
+            type = "mixed"
+        if user.current_neural_network == 7:
+            price = config.Midjourney_fast_price
+            type = "fast"
+        if user.current_neural_network == 8:
+            price = config.Midjourney_turbo_price
+            type = "turbo"
         if user.balance < config.Midjourney_mixed_price:
             await message.answer(NOT_ENOUGH_TOKEN)
             return
