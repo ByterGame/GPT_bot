@@ -206,11 +206,13 @@ async def show_legal_documets(message: Message):
 
 @command_router.callback_query(F.data=="terms_document")
 async def show_terms(call: CallbackQuery):
+    await call.answer()
     await call.message.answer(TERMS_TEXT, parse_mode="HTML")
 
 
 @command_router.callback_query(F.data=="privacy_document")
 async def show_privacy(call: CallbackQuery):
+    await call.answer()
     await call.message.answer(PRIVACY_TEXT, parse_mode="HTML")
 
 
@@ -221,6 +223,7 @@ async def show_support(message: Message):
 
 @command_router.callback_query(F.data=="refund_document")
 async def show_refund_policy(call: CallbackQuery):
+    await call.answer()
     await call.message.answer(REFUND_TEXT, parse_mode="HTML")
 
 

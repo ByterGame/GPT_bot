@@ -42,5 +42,5 @@ def configure_bonus_kb():
     return InlineKeyboardMarkup(inline_keyboard=kb_list)
 
 
-def confirm_send_announcement_kb(text):
-    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Да, отправить", callback_data=f"confirm_send_announcement_{text}")]])
+def confirm_send_announcement_kb():
+    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Да, отправить", callback_data=f"confirm_send_announcement")]])

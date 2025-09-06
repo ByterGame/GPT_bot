@@ -10,7 +10,9 @@ from create_bot import bot
 import logging
 import asyncio
 from create_bot import bot
+from cachetools import TTLCache
 
+announcement_cache = TTLCache(maxsize=100, ttl=600)
 
 class AdminStates(StatesGroup):
     select_package_to_change = State()
@@ -349,15 +351,18 @@ async def send__announcement(message: Message, state: FSMContext):
 
 @admin_router.message(AdminStates.get_announcement_text)
 async def get_announcement_text(message: Message, state: FSMContext):
+    announcement_cache[message.from_user.id] = message.text
     await message.answer(f"Итак, твое сообщение Объявление будет выглядеть так:\n\n {message.text}\n\nПодтверждаешь отправку?\n"
-                         "Для отмены используй команду /cancel", reply_markup=confirm_send_announcement_kb(text=message.text))
+                         "Для отмены используй команду /cancel", reply_markup=confirm_send_announcement_kb())
     await state.clear()
 
 
-@admin_router.callback_query(F.data.startswith("confirm_send_announcement"))
+@admin_router.callback_query(F.data == "confirm_send_announcement")
 async def confirm_send_announcement(call: CallbackQuery):
-    text = call.data.split('_')[-1]
-    
+    text = announcement_cache.get(call.from_user.id)
+    if not text:
+        await call.answer("Текст объявления устарел или не найден", show_alert=True)
+        return
     db_repo = await db.get_repository()
     users_id = await db_repo.get_all_users_id()
     
