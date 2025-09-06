@@ -129,7 +129,7 @@ async def handle_audio_message(message: Message):
     if len(transcript) < 4000:
         await message.answer(transcript)
     else:
-        await safe_send_message(message, transcript)
+        await safe_send_message(transcript)
 
     user.balance -= config.Whisper_price
     await db_repo.update_user(user)
@@ -160,10 +160,7 @@ async def simple_message_handler(message: Message):
             user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
-        if len(reply) < 4000:
-            await message.answer(reply)
-        else:
-            await safe_send_message(message, reply)
+        await safe_send_message(message, reply)
         await processing_msg.delete()
         if user.gpt_4o_mini_requests > 0:
             user.gpt_4o_mini_requests -= 1
@@ -189,10 +186,7 @@ async def simple_message_handler(message: Message):
             user.context = [{"role": "system", "content": DEFAULT_PROMPT}]
             await db_repo.update_user(user)
             return
-        if len(reply) < 4000:
-            await message.answer(reply)
-        else:
-            await safe_send_message(message, reply)
+        await safe_send_message(message, reply)
         user.balance -= config.GPT_5_text_price
         user.context = new_context
         await db_repo.update_user(user)
@@ -221,10 +215,7 @@ async def simple_message_handler(message: Message):
             await db_repo.update_user(user)
             return
 
-        if len(reply) < 4000:
-            await message.answer(reply)
-        else:
-            await safe_send_message(message, reply)
+        await safe_send_message(message, reply)
         await processing_msg.delete()
         user.balance -= config.GPT_5_vision_price
         user.context = new_context
@@ -366,10 +357,7 @@ async def handle_search_with_links(message: Message, user: User):
             await db_repo.update_user(user)
             return
 
-    if len(reply) < 4000:
-        await message.answer(reply)
-    else:
-        await safe_send_message(message, reply)
+    await safe_send_message(message, reply)
 
     user.context = new_context
     user.balance -= config.search_with_links_price

@@ -418,7 +418,8 @@ async def start_change_price(message: Message):
             f"Search with links {config.search_with_links_price} токен(ов) за запрос\n"
             f"Midjourney mixed {config.Midjourney_mixed_price} токен(ов) за запрос\n"
             f"Midjourney fast {config.Midjourney_fast_price} токен(ов) за запрос\n"
-            f"Midjourney turbo {config.Midjourney_turbo_price} токен(ов) за запрос"
+            f"Midjourney turbo {config.Midjourney_turbo_price} токен(ов) за запрос\n"
+            f"Наценка на каждый запрос за использование аудио составляет {config.Audio_markup} токен(ов)"
             )
     await message.answer(text, reply_markup=select_network_for_change_price_kb())
 
