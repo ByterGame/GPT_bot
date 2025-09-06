@@ -72,7 +72,7 @@ async def start_pay(message: Message):
     text = ("В данный момент доступна оплата только звездами!\n\n"
             "<b>Для покупки представленны следующие пакеты</b>:\n\n")
     for package in config.packages:
-        text += f"Пакет {package['name']} - {package['token_count']} токенов за {package['fiat_price']} рублей или {package['stars_price']} звезд!\n\n"
+        text += f"{package['name']} - {package['fiat_price']}₽ ⭐️{package['stars_price']} = {package['token_count']} токенов.\n\n"
     text += f"В данный момент вам доступно {user.balance} токенов"
     if not user.with_bonus:
         text += f"\n\nВы можете получить бонусные {config.Bonus_token} токенов за подписку на наш канал!"
