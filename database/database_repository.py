@@ -132,6 +132,18 @@ class DatabaseRepository:
         return need_id
     
 
+    async def get_all_users_id(self) -> list[int]:
+        query = "SELECT * FROM users"
+
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(query)
+        
+        users_id = []
+        for record in rows:
+            users_id.append(record['id'])
+        return users_id
+    
+
     async def get_config(self) -> config_data:
         query = "SELECT * FROM config_data WHERE id = $1"
         

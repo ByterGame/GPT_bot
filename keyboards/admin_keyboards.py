@@ -6,7 +6,8 @@ def get_admin_kb():
     kb_list = [
         [KeyboardButton(text="Настроить пакеты")],
         [KeyboardButton(text="Добавить/удалить админа")],
-        [KeyboardButton(text="Настроить бонусы")]
+        [KeyboardButton(text="Настроить бонусы")],
+        [KeyboardButton(text="Разослать объявление")]
     ]
     return ReplyKeyboardMarkup(keyboard=kb_list, resize_keyboard=True, one_time_keyboard=False, is_persistent=True)
 
@@ -39,3 +40,7 @@ def configure_bonus_kb():
         [InlineKeyboardButton(text="Изменить бонус с рефералов", callback_data="change_referal_bonus")]
     ]
     return InlineKeyboardMarkup(inline_keyboard=kb_list)
+
+
+def confirm_send_announcement_kb(text):
+    return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Да, отправить", callback_data=f"confirm_send_announcement_{text}")]])

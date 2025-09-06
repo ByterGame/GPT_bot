@@ -12,18 +12,22 @@ def set_mode_kb():
     return keyboard
 
 
-def pay_kb(with_bonus: bool, packages: list):
+def pay_kb(with_bonus: bool):
     kb_list = [[InlineKeyboardButton(text="Получить подписку в подарок", callback_data="pay_bonus_sub")]] if with_bonus else []
 
-    for index, package in enumerate(packages):
-        kb_list.extend([
-            [InlineKeyboardButton(text=f"купить {package['name']} за рубли", callback_data=f"buy_{index}_ruble")],
-            [InlineKeyboardButton(text=f"купить {package['name']} за звезды", callback_data=f"buy_{index}_stars")]
-        ])
+    
+    kb_list.extend([
+        [InlineKeyboardButton(text=f"купить за рубли", callback_data=f"buy_ruble")],
+        [InlineKeyboardButton(text=f"купить за звезды", callback_data=f"buy_stars")]
+    ])
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
 
+def select_pack_kb(packages: list, currency: str):
+    kb_list = []
+    for index, pack in enumerate(packages):
+        kb_list.append([InlineKeyboardButton(text=f"{pack['name']}", callback_data=f"pack_{index}_{currency}")])
 
 def referal_kb():
     kb_list = [
@@ -56,3 +60,12 @@ def mj_kb(task_id: str):
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
+
+
+def legal_document_kb():
+    kb_list = [
+        [InlineKeyboardButton(text="Пользовательское соглашение", callback_data="terms_document")],
+        [InlineKeyboardButton(text="Политика конфиденциальности", callback_data="privacy_document")],
+        [InlineKeyboardButton(text="Политика возвратов", callback_data="refund_document")]
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=kb_list)

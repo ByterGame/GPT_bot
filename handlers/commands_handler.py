@@ -3,7 +3,7 @@ from aiogram import Router, F
 from aiogram.filters import Command
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message, CallbackQuery
-from keyboards.all_inline_kb import set_mode_kb, pay_kb, delete_referer_kb 
+from keyboards.all_inline_kb import set_mode_kb, pay_kb, delete_referer_kb, legal_document_kb
 from database.core import db
 from create_bot import bot
 from aiogram.fsm.context import FSMContext
@@ -11,7 +11,7 @@ from utils.encoding import encode_ref
 from config import (TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT, DEFAULT_PROMPT,
                     HELLO_MIDJOURENEY_FAST, HELLO_GPT_5_TEXT, HELLO_DALLE, HELLO_GPT_4O,
                     HELLO_GPT_5_VISION, HELLO_MIDJOURENEY_MIXED, HELLO_MIDJOURENEY_TURBO, HELLO_SEARCH_WITH_LINKS, HELLO_WHISPER,
-                    CLEAR_CONTEXT, NEED_CANCEL, NO_NEED_CANCEL)
+                    CLEAR_CONTEXT, NEED_CANCEL, NO_NEED_CANCEL, LEGAL_DOCUMENT_TEXT)
 
 
 command_router = Router()
@@ -76,7 +76,7 @@ async def start_pay(message: Message):
     text += f"В данный момент вам доступно {user.balance} токенов"
     if not user.with_bonus:
         text += f"\n\nВы можете получить бонусные {config.Bonus_token} токенов за подписку на наш канал!"
-    await message.answer(text, reply_markup=pay_kb(with_bonus=(not user.with_bonus), packages=config.packages))
+    await message.answer(text, reply_markup=pay_kb(with_bonus=(not user.with_bonus)))
     
 
 @command_router.message(Command("clear_context"))
@@ -199,14 +199,19 @@ async def let_profile_handler(message: Message):
     await message.answer(text)
 
 
-@command_router.message(Command("terms"))
-async def show_terms(message: Message):
-    await message.answer(TERMS_TEXT, parse_mode="HTML")
+@command_router.message(Command("legal_documents"))
+async def show_legal_documets(message: Message):
+    await message.answer(LEGAL_DOCUMENT_TEXT, reply_markup=legal_document_kb())
 
 
-@command_router.message(Command("privacy"))
-async def show_privacy(message: Message):
-    await message.answer(PRIVACY_TEXT, parse_mode="HTML")
+@command_router.callback_query(F.data=="terms_document")
+async def show_terms(call: CallbackQuery):
+    await call.message.answer(TERMS_TEXT, parse_mode="HTML")
+
+
+@command_router.callback_query(F.data=="privacy_document")
+async def show_privacy(call: CallbackQuery):
+    await call.message.answer(PRIVACY_TEXT, parse_mode="HTML")
 
 
 @command_router.message(Command("support"))
@@ -214,9 +219,9 @@ async def show_support(message: Message):
     await message.answer(SUPPORT_TEXT, parse_mode="HTML")
 
 
-@command_router.message(Command("refund"))
-async def show_refund_policy(message: Message):
-    await message.answer(REFUND_TEXT, parse_mode="HTML")
+@command_router.callback_query(F.data=="refund_document")
+async def show_refund_policy(call: CallbackQuery):
+    await call.message.answer(REFUND_TEXT, parse_mode="HTML")
 
 
 @command_router.message(Command("cancel"))

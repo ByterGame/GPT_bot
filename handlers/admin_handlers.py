@@ -2,12 +2,14 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from database.core import db
 from database.models import User
-from keyboards.admin_keyboards import configure_packages_kb, confirm_delete_kb, configure_admin_kb, configure_bonus_kb
+from keyboards.admin_keyboards import configure_packages_kb, confirm_delete_kb, configure_admin_kb, configure_bonus_kb, confirm_send_announcement_kb
 from create_bot import bot
 import logging
+import asyncio
+from create_bot import bot
 
 
 class AdminStates(StatesGroup):
@@ -20,6 +22,7 @@ class AdminStates(StatesGroup):
     change_channel = State()
     change_bonus_for_sub = State()
     change_referal_bonus = State()
+    get_announcement_text = State()
 
 
 admin_router = Router()
@@ -335,3 +338,60 @@ async def change_referal_bonus(message: Message, state: FSMContext):
         await db_repo.update_config(config)
     except Exception as e:
         await message.answer(f"Ошибка {e}. Убедитесь, что вы вводите одно число без пробелов")
+
+
+@admin_router.message(F.text=="Разослать объявление", is_admin)
+async def send__announcement(message: Message, state: FSMContext):
+    await message.answer("Пришли мне текст объявления (оно не отправится без подтверждения)\n"
+                         "Для отмены используй команду /cancel")
+    await state.set_state(AdminStates.get_announcement_text)
+
+
+@admin_router.message(AdminStates.get_announcement_text)
+async def get_announcement_text(message: Message, state: FSMContext):
+    await message.answer(f"Итак, твое сообщение Объявление будет выглядеть так:\n\n {message.text}\n\nПодтверждаешь отправку?\n"
+                         "Для отмены используй команду /cancel", reply_markup=confirm_send_announcement_kb(text=message.text))
+    await state.clear()
+
+
+@admin_router.callback_query(F.data.startswith("confirm_send_announcement"))
+async def confirm_send_announcement(call: CallbackQuery):
+    text = call.data.split('_')[-1]
+    
+    db_repo = await db.get_repository()
+    users_id = await db_repo.get_all_users_id()
+    
+    await call.message.edit_text("⏳ Начинаю рассылку...")
+    
+    success_count = 0
+    failed_count = 0
+    blocked_count = 0
+    
+    for user_id in users_id:
+        try:
+            await bot.send_message(chat_id=user_id, text=text)
+            success_count += 1
+            await asyncio.sleep(0.1)
+            
+        except TelegramForbiddenError:
+            blocked_count += 1
+            
+        except TelegramBadRequest as e:
+            logging.error(f"Ошибка отправки пользователю {user_id}: {e}")
+            failed_count += 1
+            
+        except Exception as e:
+            logging.error(f"Неожиданная ошибка для пользователя {user_id}: {e}")
+            failed_count += 1
+    
+    report = (
+        f"✅ Рассылка завершена!\n\n"
+        f"📊 Статистика:\n"
+        f"• Успешно отправлено: {success_count}\n"
+        f"• Заблокировали бота: {blocked_count}\n"
+        f"• Ошибок отправки: {failed_count}\n"
+        f"• Всего пользователей: {len(users_id)}"
+    )
+    
+    await call.message.edit_text(report)
+

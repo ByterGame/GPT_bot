@@ -14,7 +14,7 @@ from handlers.admin_handlers import admin_router
 from aiohttp import web
 from config import (WEBHOOK_PATH, WEBHOOK_URL, PORT_BOT, PAY_DESC, MODE_DESC, 
                     START_DESC, REFUND_DESC, PRIVACY_DESC, PROFILE_DESC, REFERAL_DESC,
-                    SUPPORT_DESC, CLEAR_CONTEXT_DESC, TERMS_DESC)
+                    SUPPORT_DESC, CLEAR_CONTEXT_DESC, TERMS_DESC, LEGAL_DOCUMENTS_DESC)
 from planned_activities.reset_limits import reset_limits
 
 
@@ -84,11 +84,9 @@ async def set_commands():
         BotCommand(command="pay", description=PAY_DESC),
         BotCommand(command="profile", description=PROFILE_DESC),
         BotCommand(command="clear_context", description=CLEAR_CONTEXT_DESC),
-        BotCommand(command="terms", description=TERMS_DESC),
-        BotCommand(command="privacy", description=PRIVACY_DESC),
         BotCommand(command="support", description=SUPPORT_DESC),
-        BotCommand(command="refund", description=REFUND_DESC),
-        BotCommand(command="referal", description=REFERAL_DESC)
+        BotCommand(command="referal", description=REFERAL_DESC),
+        BotCommand(command="legal_documents", description=LEGAL_DOCUMENTS_DESC)
     ]
     await bot.set_my_commands(commands=commands, scope=BotCommandScopeDefault())
 

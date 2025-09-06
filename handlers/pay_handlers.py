@@ -2,16 +2,25 @@ import asyncio
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
 from database.core import db
-from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel
+from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel, select_pack_kb
 from create_bot import bot
 from aiogram.exceptions import TelegramBadRequest
-from config import REMINDER
+from config import REMINDER, SELECT_PACK_TEXT
 
 
 pay_router = Router()
 
 
 @pay_router.callback_query(F.data.startswith('buy_'))
+async def select_pack(call: CallbackQuery):
+    await call.answer()
+    db_repo = await db.get_repository()
+    config = await db_repo.get_config()
+    data = call.data.split("_") #["buy", currency]
+    await call.message.answer(SELECT_PACK_TEXT, reply_markup=select_pack_kb(config.packages, data[1]))
+
+
+@pay_router.callback_query(F.data.startswith('pack_'))
 async def let_pay_message(call: CallbackQuery):
     await call.answer()
     db_repo = await db.get_repository()
