@@ -266,7 +266,7 @@ async def simple_message_handler(message: Message):
         if user.current_neural_network == 8:
             price = config.Midjourney_turbo_price
             type = "turbo"
-        if user.balance < config.Midjourney_mixed_price:
+        if user.balance < price:
             await message.answer(NOT_ENOUGH_TOKEN)
             return
 
@@ -283,7 +283,7 @@ async def simple_message_handler(message: Message):
             "input": {
                 "prompt": message.text,
                 "aspect_ratio": "16:9",
-                "process_mode": "mixed",
+                "process_mode": 'mixed',
                 "skip_prompt_check": False,
                 "bot_id": 0
             }
@@ -296,7 +296,7 @@ async def simple_message_handler(message: Message):
         task_id = result["task_id"]
         image_url = await poll_task(task_id, message.from_user.id)
         if image_url:
-            user.balance -= config.Midjourney_mixed_price
+            user.balance -= price
             photo_file = await download_photo(image_url, task_id)
             if photo_file:
                 await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
