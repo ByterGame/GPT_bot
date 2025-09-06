@@ -8,7 +8,7 @@ from aiogram.exceptions import TelegramBadRequest
 
 ALLOWED_TAGS = {
     "b","strong","i","em","u","ins","s","strike","del",
-    "a","code","pre","blockquote","span"
+    "a","code","pre","blockquote","span", "p"
 }
 ALLOWED_ATTRS = {
     "a": {"href"},
