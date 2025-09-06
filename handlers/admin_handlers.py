@@ -120,8 +120,8 @@ async def confirm_delete(call: CallbackQuery, state: FSMContext):
         config = await db_repo.get_config()
         index = int(call.data.split('_')[2])
         logging.info(f"index: {index}, packages {config.packages}")
-        del config.packages[index]
         await call.message.answer(f'Пакет "{config.packages[index]['name']}" был удален')
+        del config.packages[index]
         await state.clear()
         await db_repo.update_config(config)
     except Exception as e:
