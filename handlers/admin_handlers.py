@@ -420,7 +420,7 @@ async def start_change_price(message: Message):
             f"Midjourney fast {config.Midjourney_fast_price} токен(ов) за запрос\n"
             f"Midjourney turbo {config.Midjourney_turbo_price} токен(ов) за запрос"
             )
-    await message.answer("Выбери нейронку, для которой хочешь поменять цену:", reply_markup=select_network_for_change_price_kb())
+    await message.answer(text, reply_markup=select_network_for_change_price_kb())
 
 
 @admin_router.callback_query(F.data.startswith("change_"))
