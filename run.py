@@ -13,8 +13,8 @@ from handlers.pay_handlers import pay_router
 from handlers.admin_handlers import admin_router
 from aiohttp import web
 from config import (WEBHOOK_PATH, WEBHOOK_URL, PORT_BOT, PAY_DESC, MODE_DESC, 
-                    START_DESC, REFUND_DESC, PRIVACY_DESC, PROFILE_DESC, REFERAL_DESC,
-                    SUPPORT_DESC, CLEAR_CONTEXT_DESC, TERMS_DESC, LEGAL_DOCUMENTS_DESC)
+                    START_DESC, PROFILE_DESC, REFERAL_DESC,
+                    SUPPORT_DESC, CLEAR_CONTEXT_DESC, LEGAL_DOCUMENTS_DESC)
 from planned_activities.reset_limits import reset_limits
 
 
