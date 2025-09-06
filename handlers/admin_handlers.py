@@ -7,6 +7,7 @@ from database.core import db
 from database.models import User
 from keyboards.admin_keyboards import configure_packages_kb, confirm_delete_kb, configure_admin_kb, configure_bonus_kb
 from create_bot import bot
+import logging
 
 
 class AdminStates(StatesGroup):
@@ -118,6 +119,7 @@ async def confirm_delete(call: CallbackQuery, state: FSMContext):
         db_repo = await db.get_repository()
         config = await db_repo.get_config()
         index = int(call.data.split('_')[2])
+        logging.info(f"index: {index}, packages {config.packages}")
         del config.packages[index]
         await call.message.answer(f'Пакет "{config.packages[index]['name']}" был удален')
         await state.clear()
