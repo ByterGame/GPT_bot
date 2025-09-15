@@ -231,7 +231,7 @@ async def show_refund_policy(call: CallbackQuery):
     await call.message.answer(REFUND_TEXT, parse_mode="HTML")
 
 
-@command_router.callback_query(Command("public_offer"))
+@command_router.message(Command("public_offer"))
 async def show_refund_policy(call: CallbackQuery):
     await call.answer()
     await call.message.answer(PUBLIC_OFFER, parse_mode="HTML")
