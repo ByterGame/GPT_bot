@@ -52,7 +52,8 @@ def select_network_for_change_price_kb():
         [InlineKeyboardButton(text="gpt-4o mini", callback_data="change_gpt_4o_mini"), InlineKeyboardButton(text="gpt-5 text", callback_data="change_gpt5_text")],
         [InlineKeyboardButton(text="gpt-5 vision", callback_data="change_gpt5_vision"), InlineKeyboardButton(text="DALL·E", callback_data="change_dalle")],
         [InlineKeyboardButton(text="whisper", callback_data="change_whisper"), InlineKeyboardButton(text="Search with links", callback_data="change_web_search")],
-        [InlineKeyboardButton(text="MidJorney mixed", callback_data="change_midjorney_mixed"), InlineKeyboardButton(text="Аудио наценка", callback_data="change_audio_markup")]    
+        [InlineKeyboardButton(text="MidJorney mixed", callback_data="change_midjorney_mixed"), InlineKeyboardButton(text="MidJorney fast", callback_data="change_midjorney_fast")],
+        [InlineKeyboardButton(text="MidJorney turbo", callback_data="change_midjorney_turbo"), InlineKeyboardButton(text="Аудио наценка", callback_data="change_audio_markup")]    
     ]
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard

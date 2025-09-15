@@ -183,6 +183,10 @@ def split_html_for_telegram(html: str, limit: int = 4000) -> List[str]:
 def html_to_plain(html: str) -> str:
     import re
     from html import unescape
+    s = re.sub(r"</p\s*>", "\n\n", html, flags=re.I)
+    s = re.sub(r"<p(\s[^>]*)?>", "", s, flags=re.I)
+    
+    s = re.sub(r"</?html[^>]*>", "", s, flags=re.I)
     s = re.sub(r"<pre>\s*<code[^>]*>(.*?)</code>\s*</pre>", lambda m: "\n"+unescape(m.group(1))+"\n", html, flags=re.S|re.I)
     s = re.sub(
         r'<a[^>]*href="([^"]+)"[^>]*>(.*?)</a>',
