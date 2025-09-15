@@ -11,7 +11,7 @@ from utils.encoding import encode_ref
 from config import (TERMS_TEXT, PRIVACY_TEXT, SUPPORT_TEXT, REFUND_TEXT, DEFAULT_PROMPT,
                     HELLO_MIDJOURENEY_FAST, HELLO_GPT_5_TEXT, HELLO_DALLE, HELLO_GPT_4O,
                     HELLO_GPT_5_VISION, HELLO_MIDJOURENEY_MIXED, HELLO_MIDJOURENEY_TURBO, HELLO_SEARCH_WITH_LINKS, HELLO_WHISPER,
-                    CLEAR_CONTEXT, NEED_CANCEL, NO_NEED_CANCEL, LEGAL_DOCUMENT_TEXT)
+                    CLEAR_CONTEXT, NEED_CANCEL, NO_NEED_CANCEL, LEGAL_DOCUMENT_TEXT, PUBLIC_OFFER)
 
 
 command_router = Router()
@@ -229,6 +229,12 @@ async def show_support(message: Message):
 async def show_refund_policy(call: CallbackQuery):
     await call.answer()
     await call.message.answer(REFUND_TEXT, parse_mode="HTML")
+
+
+@command_router.callback_query(F.data=="public_offer")
+async def show_refund_policy(call: CallbackQuery):
+    await call.answer()
+    await call.message.answer(PUBLIC_OFFER, parse_mode="HTML")
 
 
 @command_router.message(Command("cancel"))
