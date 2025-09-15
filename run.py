@@ -86,7 +86,8 @@ async def set_commands():
         BotCommand(command="clear_context", description=CLEAR_CONTEXT_DESC),
         BotCommand(command="support", description=SUPPORT_DESC),
         BotCommand(command="referal", description=REFERAL_DESC),
-        BotCommand(command="legal_documents", description=LEGAL_DOCUMENTS_DESC)
+        BotCommand(command="legal_documents", description=LEGAL_DOCUMENTS_DESC),
+        BotCommand(command="public_offer", description="Публичная офферта")
     ]
     await bot.set_my_commands(commands=commands, scope=BotCommandScopeDefault())
 
