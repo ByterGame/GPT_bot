@@ -3,12 +3,13 @@ import aiohttp
 import logging
 from config import MJ_KEY
 from create_bot import bot
-from handlers.midjourney_handlers import pending_tasks
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 POLL_INTERVAL = 15
+
+pending_tasks = {}
 
 
 async def send_prompt(payload: dict, user_id: int):
