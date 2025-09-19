@@ -26,15 +26,8 @@ async def send_variation_request(message: Message, state: FSMContext):
     proc_msg = await message.answer(MIDJOURNEY_WAIT)
     data = await state.get_data()
     payload = {
-        "model": "midjourney",
-        "task_type": "variation",
-        "input": {
-            "prompt": message.text,
-            "aspect_ratio": "16:9",
-            "index": data['index'],
-            "skip_prompt_check": False,
-            "origin_task_id": data['origin_task_id']
-        }
+        "text": message.text,
+        "callback": "https://gpt-klon-ai.onrender.com/mj"
     }
     result = await send_prompt(payload)
     if "error" in result:

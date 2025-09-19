@@ -278,38 +278,31 @@ async def simple_message_handler(message: Message):
         proc_msg = await message.answer(MIDJOURNEY_WAIT)
         
         payload = {
-            "model": "midjourney",
-            "task_type": "imagine",
-            "input": {
-                "prompt": message.text,
-                "aspect_ratio": "16:9",
-                "process_mode": 'mixed',
-                "skip_prompt_check": False,
-                "bot_id": 0
-            }
+        "text": message.text,
+        "callback": "https://gpt-klon-ai.onrender.com/mj"
         }
         result = await send_prompt(payload)
         if "error" in result:
             logging.error(f"[generate_image] Ошибка при создании задачи: {result}")
             await message.answer("Ошибка при создании задачи")
             return 
-        task_id = result["task_id"]
-        image_url = await poll_task(task_id, message.from_user.id)
-        if image_url:
-            user.balance -= price
-            photo_file = await download_photo(image_url, task_id)
-            if photo_file:
-                await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
-            else:
-                await message.answer((f"{LONG_PROCESSING_MJ}{image_url}"),
-                                        reply_markup=mj_kb(task_id))
-            text = (INSTRUCTION_MJ)
-            await message.answer(text)
-            await proc_msg.delete()
-            await db_repo.update_user(user)
-        else:
-            await message.answer("Произошла ошибка, попробуйте позже!")
-            await proc_msg.delete()
+        # task_id = result["task_id"]
+        # image_url = await poll_task(task_id, message.from_user.id)
+        # if image_url:
+        #     user.balance -= price
+        #     photo_file = await download_photo(image_url, task_id)
+        #     if photo_file:
+        #         await message.answer_photo(photo=photo_file, reply_markup=mj_kb(task_id))
+        #     else:
+        #         await message.answer((f"{LONG_PROCESSING_MJ}{image_url}"),
+        #                                 reply_markup=mj_kb(task_id))
+        #     text = (INSTRUCTION_MJ)
+        #     await message.answer(text)
+        #     await proc_msg.delete()
+        #     await db_repo.update_user(user)
+        # else:
+        #     await message.answer("Произошла ошибка, попробуйте позже!")
+        #     await proc_msg.delete()
     else:
         logging.info(f"Текущая нейронка {user.current_neural_network}")
 
