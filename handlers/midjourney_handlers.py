@@ -12,6 +12,7 @@ from aiohttp import web
 import logging
 from create_bot import bot
 from utils.download_photo import download_photo
+from neural_networks.MidJourney import pending_tasks
 from config import MIDJOURNEY_WAIT, LONG_PROCESSING_MJ, NOT_ENOUGH_TOKEN, VARIATIONS_MJ
 
 
@@ -130,7 +131,6 @@ async def upscale_handler(call: CallbackQuery):
 
 mj_callback_router = Router()
 
-pending_tasks = {}
 
 @mj_callback_router.message(F.text)
 async def handle_mj_callback(request: web.Request):
