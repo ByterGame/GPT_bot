@@ -12,7 +12,7 @@ POLL_INTERVAL = 15
 
 
 async def send_prompt(payload: dict):
-    url = "https://api.goapi.ai/api/v1/task"
+    url = "https://api.legnext.ai/api/v1/diffusion"
     headers = {
         "X-API-KEY": MJ_KEY,
         "Content-Type": "application/json"
