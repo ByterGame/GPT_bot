@@ -12,6 +12,7 @@ from handlers.midjourney_handlers import midjourney_router
 from handlers.pay_handlers import pay_router
 from handlers.admin_handlers import admin_router
 from aiohttp import web
+from handlers.midjourney_handlers import handle_mj_callback
 from config import (WEBHOOK_PATH, WEBHOOK_URL, PORT_BOT, PAY_DESC, MODE_DESC, 
                     START_DESC, PROFILE_DESC, REFERAL_DESC,
                     SUPPORT_DESC, CLEAR_CONTEXT_DESC, LEGAL_DOCUMENTS_DESC)
@@ -49,6 +50,7 @@ async def main():
     )
 
     app = web.Application()
+    app.router.add_post('/mj', handle_mj_callback)
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
