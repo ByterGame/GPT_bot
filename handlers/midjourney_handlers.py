@@ -5,8 +5,12 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from neural_networks.MidJourney import send_prompt, poll_task
 from database.core import db
-from datetime import datetime
 from keyboards.all_inline_kb import mj_kb
+from aiogram import Router, F
+from aiogram.types import Message
+from aiohttp import web
+import logging
+from create_bot import bot
 from utils.download_photo import download_photo
 from config import MIDJOURNEY_WAIT, LONG_PROCESSING_MJ, NOT_ENOUGH_TOKEN, VARIATIONS_MJ
 
@@ -26,8 +30,15 @@ async def send_variation_request(message: Message, state: FSMContext):
     proc_msg = await message.answer(MIDJOURNEY_WAIT)
     data = await state.get_data()
     payload = {
-        "text": message.text,
-        "callback": "https://gpt-klon-ai.onrender.com/mj"
+        "model": "midjourney",
+        "task_type": "variation",
+        "input": {
+            "prompt": message.text,
+            "aspect_ratio": "16:9",
+            "index": data['index'],
+            "skip_prompt_check": False,
+            "origin_task_id": data['origin_task_id']
+        }
     }
     result = await send_prompt(payload)
     if "error" in result:
@@ -115,3 +126,42 @@ async def upscale_handler(call: CallbackQuery):
         await call.message.answer("Произошла ошибка, попробуйте позже!")
 
     await proc_msg.delete()
+
+
+mj_callback_router = Router()
+
+pending_tasks = {}
+
+@mj_callback_router.message(F.text)
+async def handle_mj_callback(request: web.Request):
+    try:
+        data = await request.json()
+        logging.info(f"Получен колбэк от Midjourney: {data}")
+        
+        task_id = data.get('job_id')
+        status = data.get('status')
+        image_url = data.get('image_url')
+        error = data.get('error')
+        
+        if task_id in pending_tasks:
+            user_id = pending_tasks[task_id]
+            
+            if status == 'completed' and image_url:
+                await bot.send_photo(
+                    chat_id=user_id,
+                    photo=image_url,
+                    caption="Ваше изображение готово! 🎨"
+                )
+            elif status == 'failed' and error:
+                await bot.send_message(
+                    chat_id=user_id,
+                    text=f"Ошибка при генерации изображения: {error}"
+                )
+            
+            del pending_tasks[task_id]
+            
+        return web.json_response({'status': 'ok'})
+        
+    except Exception as e:
+        logging.error(f"Ошибка обработки колбэка: {e}")
+        return web.json_response({'error': str(e)}, status=400)

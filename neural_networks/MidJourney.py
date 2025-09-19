@@ -3,7 +3,7 @@ import aiohttp
 import logging
 from config import MJ_KEY
 from create_bot import bot
-
+from handlers.midjourney_handlers import pending_tasks
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 POLL_INTERVAL = 15
 
 
-async def send_prompt(payload: dict):
+async def send_prompt(payload: dict, user_id: int):
     url = "https://api.legnext.ai/api/v1/diffusion"
     headers = {
         "X-API-KEY": MJ_KEY,
@@ -27,7 +27,8 @@ async def send_prompt(payload: dict):
                 logger.error(f"[send_prompt] Ошибка при разборе JSON: {e}")
                 return {"error": str(e)}
 
-            task_id = data.get("data", {}).get("task_id")
+            task_id = data.get("data", {}).get("job_id")
+            pending_tasks[task_id] = user_id
             if not task_id:
                 logger.error(f"[send_prompt] Не удалось получить task_id. Ответ: {data}")
                 return {"error": "Не удалось получить task_id", "data": data}

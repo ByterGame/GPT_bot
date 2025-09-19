@@ -278,10 +278,10 @@ async def simple_message_handler(message: Message):
         proc_msg = await message.answer(MIDJOURNEY_WAIT)
         
         payload = {
-        "text": message.text,
-        "callback": "https://gpt-klon-ai.onrender.com/mj"
+            "text": message.text,
+            "callback": "https://gpt-klon-ai.onrender.com/mj"
         }
-        result = await send_prompt(payload)
+        result = await send_prompt(payload, message.from_user.id)
         if "error" in result:
             logging.error(f"[generate_image] Ошибка при создании задачи: {result}")
             await message.answer("Ошибка при создании задачи")
