@@ -28,7 +28,7 @@ async def send_prompt(payload: dict, user_id: int):
                 logger.error(f"[send_prompt] Ошибка при разборе JSON: {e}")
                 return {"error": str(e)}
 
-            task_id = data.get("data", {}).get("job_id")
+            task_id = data.get("job_id")
             pending_tasks[task_id] = user_id
             if not task_id:
                 logger.error(f"[send_prompt] Не удалось получить task_id. Ответ: {data}")

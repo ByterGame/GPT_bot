@@ -13,6 +13,7 @@ import logging
 from create_bot import bot
 from utils.download_photo import download_photo
 from neural_networks.MidJourney import pending_tasks
+import json
 from config import MIDJOURNEY_WAIT, LONG_PROCESSING_MJ, NOT_ENOUGH_TOKEN, VARIATIONS_MJ
 
 
@@ -129,21 +130,25 @@ async def upscale_handler(call: CallbackQuery):
     await proc_msg.delete()
 
 
-mj_callback_router = Router()
 
-
-@mj_callback_router.message(F.text)
 async def handle_mj_callback(request: web.Request):
     try:
         data = await request.json()
         logging.info(f"Получен колбэк от Midjourney: {data}")
         
-        task_id = data.get('job_id')
-        status = data.get('status')
-        image_url = data.get('image_url')
-        error = data.get('error')
+        job_data = data.get("data", {})
+        task_id = job_data.get('job_id')
+        status = job_data.get('status')
         
-        if task_id in pending_tasks:
+        output_data = job_data.get('output', {})
+        image_url = output_data.get('image_url')
+        
+        error_data = job_data.get('error', {})
+        error_message = error_data.get('message')
+        
+        logging.info(f"Обработка задачи: task_id={task_id}, status={status}")
+        
+        if task_id and task_id in pending_tasks:
             user_id = pending_tasks[task_id]
             
             if status == 'completed' and image_url:
@@ -152,16 +157,27 @@ async def handle_mj_callback(request: web.Request):
                     photo=image_url,
                     caption="Ваше изображение готово! 🎨"
                 )
-            elif status == 'failed' and error:
+                logging.info(f"Изображение отправлено пользователю {user_id}")
+                
+            elif status == 'failed' and error_message:
                 await bot.send_message(
                     chat_id=user_id,
-                    text=f"Ошибка при генерации изображения: {error}"
+                    text=f"Ошибка при генерации изображения: {error_message}"
                 )
+                logging.info(f"Ошибка отправлена пользователю {user_id}")
             
             del pending_tasks[task_id]
+            logging.info(f"Задача {task_id} удалена из ожидания")
+            
+        else:
+            logging.warning(f"Задача {task_id} не найдена в pending_tasks")
             
         return web.json_response({'status': 'ok'})
         
+    except json.JSONDecodeError as e:
+        logging.error(f"Ошибка декодирования JSON: {e}")
+        return web.json_response({'error': 'Invalid JSON'}, status=400)
+        
     except Exception as e:
         logging.error(f"Ошибка обработки колбэка: {e}")
-        return web.json_response({'error': str(e)}, status=400)
+        return web.json_response({'error': str(e)}, status=500)
