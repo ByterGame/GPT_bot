@@ -72,8 +72,12 @@ async def create_invoice(user_id: int, package: dict):
         "Authorization": f"Bearer {jwt_token}"
     }
 
+    request_body = {
+        "request": payload
+    }
+
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers) as response:
+        async with session.post(url, headers=headers, json=request_body) as response:
             try:
                 data = await response.json(content_type=None)
                 logging.info("Ответ Робокассы: %s", data)
