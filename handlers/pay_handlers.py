@@ -102,11 +102,11 @@ async def let_pay_message(call: CallbackQuery):
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers) as response:
                 try:
-                    logging.info("Успешный ответ:", response.json())
+                    response_data = await response.json()
+                    logging.info("Успешный ответ: %s", response_data)
                 except Exception as e:
-                    logging.error("Ошибка запроса:", e)
-                    if response is not None:
-                        logging.error("Детали ошибки:", response.text)
+                    error_text = await response.text() if response else "No response"
+                    logging.error("Ошибка запроса: %s. Детали ошибки: %s", e, error_text)
 
     await asyncio.sleep(240)
     user = await db_repo.get_user(call.from_user.id)
