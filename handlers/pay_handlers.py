@@ -32,29 +32,29 @@ async def create_invoice(user_id: int, package: dict):
     sign_string = f"{RB_MERCHANT_LOGIN}:{out_sum}:{invoice_id}:{RB_TEST_PASSWORD1}"
     signature_value = hashlib.md5(sign_string.encode("utf-8")).hexdigest()
 
-    payload = {
-        "MerchantLogin": RB_MERCHANT_LOGIN,
-        "OutSum": out_sum,
-        "InvoiceID": invoice_id,
-        "Description": description,
-        "SignatureValue": signature_value,
-        "Culture": "ru",
-        "Encoding": "utf-8",
-        "IsTest": 1,
-        "shp_user_id": str(user_id),
-    }
+    form = aiohttp.FormData()
+    form.add_field("MerchantLogin", RB_MERCHANT_LOGIN)
+    form.add_field("OutSum", out_sum)
+    form.add_field("InvoiceID", invoice_id)
+    form.add_field("Description", description)
+    form.add_field("SignatureValue", signature_value)
+    form.add_field("Culture", "ru")
+    form.add_field("Encoding", "utf-8")
+    form.add_field("IsTest", "1")
+    form.add_field("shp_user_id", str(user_id))
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, data=payload) as response:
+        async with session.post(url, data=form) as response:
             try:
-                data = await response.json()
+                data = await response.json(content_type=None)
                 logging.info("Ответ Робокассы: %s", data)
                 if response.status == 200 and "InvoiceUrl" in data:
                     return data["InvoiceUrl"]
                 else:
                     return None
             except Exception as e:
-                logging.error("Ошибка при запросе: %s", e)
+                text = await response.text()
+                logging.error("Ошибка при запросе: %s | ответ: %s", e, text)
                 return None
 
 @pay_router.callback_query(F.data.startswith('buy_'))
