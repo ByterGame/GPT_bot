@@ -42,7 +42,6 @@ async def create_invoice(user_id: int, package: dict):
         "Encoding": "utf-8",
         "IsTest": 1,
         "shp_user_id": str(user_id),
-        "shp_package_id": str(package["id"]),
     }
 
     headers = {"Content-Type": "application/json"}
