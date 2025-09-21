@@ -12,7 +12,7 @@ import hashlib
 import hmac
 import logging
 from robokassa import HashAlgorithm, Robokassa
-from robokassa.types import InvoiceType
+from robokassa.types import InvoiceType, Culture
 from config import (REMINDER, SELECT_PACK_TEXT,
                     RB_PASSWORD1, RB_PASSWORD2,
                     RB_TEST_PASSWORD1, RB_TEST_PASSWORD2, 
@@ -62,7 +62,7 @@ async def let_pay_message(call: CallbackQuery):
             invoice_type=InvoiceType.ONE_TIME,
             out_sum=package['fiat_price'],
             description=f"покупка пользователем с id {call.from_user.id}",
-            culture="ru",
+            culture=Culture.RU,
             merchant_comments=""
         )
         await call.message.answer(f"Для оплаты пакета {package['name']} на сумму {package['fiat_price']} рублей воспользуйтесь кнопкой ниже!",
