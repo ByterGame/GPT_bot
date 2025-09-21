@@ -88,7 +88,7 @@ async def let_pay_message(call: CallbackQuery):
             secret_key_base64.encode('utf-8'),
             signing_input.encode('utf-8'),
             hashlib.md5
-        ).hexdigest()
+        ).digest()
 
         encode_signature = base64_encode(signature)
 
@@ -188,8 +188,10 @@ async def check_bonus_sub(call: CallbackQuery):
         return False   
     
 
-def base64_encode(data: dict) -> str:
+def base64_encode(data):
     if isinstance(data, dict):
-        data = json.dumps(data).encode('utf-8')
+        data = json.dumps(data, ensure_ascii=False).encode('utf-8')
+    elif isinstance(data, str):
+        data = data.encode('utf-8')
     encoded = base64.urlsafe_b64encode(data).decode('utf-8')
     return encoded.rstrip('=')
