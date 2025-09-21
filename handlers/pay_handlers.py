@@ -39,7 +39,7 @@ async def create_invoice(user_id: int, package: dict):
             "IsTest": 1,
             "UserFields": {
                 "shp_user_id": str(user_id),
-                "shp_package_id": str(data[1])
+                "shp_package_name": package['name']
             },
             "InvoiceItems": [
                 {
