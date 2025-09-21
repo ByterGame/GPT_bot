@@ -73,7 +73,7 @@ async def create_invoice(user_id: int, package: dict):
     }
 
     request_body = {
-        "request": payload
+        "request": json.dumps(payload, ensure_ascii=False)
     }
 
     async with aiohttp.ClientSession() as session:
