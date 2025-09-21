@@ -25,6 +25,12 @@ def pay_kb(with_bonus: bool):
     keyboard = InlineKeyboardMarkup(inline_keyboard=kb_list)
     return keyboard
 
+
+def fiat_pay_kb(url: str):
+    kb_list = [[InlineKeyboardButton(text="Оплатить", url=url)]]
+    return InlineKeyboardMarkup(inline_keyboard=kb_list)
+
+
 def select_pack_kb(packages: list, currency: str):
     kb_list = []
     for index, pack in enumerate(packages):

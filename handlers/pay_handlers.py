@@ -2,7 +2,7 @@ import asyncio
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, LabeledPrice, PreCheckoutQuery
 from database.core import db
-from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel, select_pack_kb
+from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel, select_pack_kb, fiat_pay_kb
 from create_bot import bot
 from aiogram.exceptions import TelegramBadRequest
 import aiohttp
@@ -11,81 +11,25 @@ import json
 import hashlib
 import hmac
 import logging
+from robokassa import HashAlgorithm, Robokassa
+from robokassa.types import InvoiceType
 from config import (REMINDER, SELECT_PACK_TEXT,
                     RB_PASSWORD1, RB_PASSWORD2,
                     RB_TEST_PASSWORD1, RB_TEST_PASSWORD2, 
                     RB_MERCHANT_LOGIN)
 
 
+
 pay_router = Router()
-
-async def create_invoice(user_id: int, package: dict):
-    url = 'https://services.robokassa.ru/InvoiceServiceWebApi/api/CreateInvoice'
-
-    header = {
-        "typ": "JWT",
-        "alg": "MD5"
-    }
-    encode_header = base64_encode(header)
-
-    payload = {
-            "MerchantLogin": RB_MERCHANT_LOGIN,
-            "InvoiceType": "OneTime",
-            "Culture": "ru",
-            "InvId": None,
-            "OutSum": str(package['fiat_price']),
-            "Description": f"Покупка пакета {package['name']}",
-            "MerchantComments": "test",
-            "IsTest": 1,
-            "UserFields": {
-                "shp_user_id": str(user_id),
-                "shp_package_name": package['name']
-            },
-            "InvoiceItems": [
-                {
-                "Name": f"Пакет {package['name']}",
-                "Quantity": 1,
-                "Cost": str(package['fiat_price']),
-                "Tax": "vat20",
-                "PaymentMethod": "full_payment",
-                "PaymentObject": "commodity"
-                }
-            ]
-        }
-    encode_payload = base64_encode(payload)
-
-    secret_string = f"{RB_MERCHANT_LOGIN}:{RB_TEST_PASSWORD1}"
-    secret_key = base64.b64encode(secret_string.encode("utf-8"))
-
-    signature = hmac.new(
-        secret_key,
-        f"{encode_header}.{encode_payload}".encode("utf-8"),
-        hashlib.md5
-    ).digest()
-
-    encode_signature = base64_encode(signature)
-
-    jwt_token = f"{encode_header}.{encode_payload}.{encode_signature}"
-
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}"
-    }
+robokassa = Robokassa(
+    merchant_login=RB_MERCHANT_LOGIN,
+    password1=RB_PASSWORD1,
+    password2=RB_PASSWORD2,
+    is_test=False,
+    algorithm=HashAlgorithm.md5,
+)
 
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers, data="") as response:
-            try:
-                data = await response.json(content_type=None)
-                logging.info("Ответ Робокассы: %s", data)
-                if response.status == 200 and "InvoiceUrl" in data:
-                    return data["InvoiceUrl"]
-                else:
-                    return None
-            except Exception as e:
-                text = await response.text()
-                logging.error("Ошибка при запросе: %s | ответ: %s", e, text)
-                return None
 
 @pay_router.callback_query(F.data.startswith('buy_'))
 async def select_pack(call: CallbackQuery):
@@ -114,11 +58,15 @@ async def let_pay_message(call: CallbackQuery):
             start_parameter=f"index_pack{data[1]}_for_{call.from_user.id}"
         )
     else:
-        resp = await create_invoice(call.from_user.id, package)
-        if resp is not None:
-            await call.message.answer(resp)
-        else:
-            await call.message.answer("Ошибка при создании платежа")
+        link = await robokassa.generate_protected_payment_link(
+            invoice_type=InvoiceType.ONE_TIME,
+            out_sum=package['fiat_price'],
+            description=f"покупка пользователем с id {call.from_user.id}",
+            culture="ru",
+            merchant_comments=""
+        )
+        await call.message.answer(f"Для оплаты пакета {package['name']} на сумму {package['fiat_price']} рублей воспользуйтесь кнопкой ниже!",
+                                  reply_markup=fiat_pay_kb(link.url))
 
     await asyncio.sleep(240)
     user = await db_repo.get_user(call.from_user.id)
