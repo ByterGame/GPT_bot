@@ -63,14 +63,16 @@ async def let_pay_message(call: CallbackQuery):
                 description=f"покупк пользователем с id {call.from_user.id}",
                 culture=Culture.RU,
                 merchant_comments="",  
-                user_id=call.from_user.id
+                user_id=call.from_user.id,
+                token_count=package['token_count']
             )
         except Exception as e:
             try:
                 link = robokassa.generate_open_payment_link(package['fiat_price'], 
                                                             inv_id=0, 
                                                             culture=Culture.RU, 
-                                                            user_id=call.from_user.id)
+                                                            user_id=call.from_user.id,
+                                                            token_count=package['token_count'])
             except:
                 await call. message.answer("Ошибка при создании оплаты, попробуйте позже или оплатите звездами")
                 logging.error(f"Ошибка при создании ссылки для оплаты RB - {e}")
@@ -161,8 +163,8 @@ async def check_rb_pay(request: web.Request):
     try:
         data = await request.post()
         logging.info(f"Получено подтверждение от RB: {dict(data)}")
-
-        return web.Response(text="OK")
+        inv_id = data.get("InvId")
+        return web.Response(text=f"OK{inv_id}", content_type="text/plain")
     except Exception as e:
         logging.error(f"Ошибка {e}")
     
