@@ -9,8 +9,7 @@ import aiohttp
 import base64
 import json
 import hashlib
-import aiohttp
-import logging
+import hmac
 import logging
 from config import (REMINDER, SELECT_PACK_TEXT,
                     RB_PASSWORD1, RB_PASSWORD2,
@@ -20,31 +19,61 @@ from config import (REMINDER, SELECT_PACK_TEXT,
 
 pay_router = Router()
 
-
-
 async def create_invoice(user_id: int, package: dict):
-    url = "https://services.robokassa.ru/InvoiceServiceWebApi/api/CreateInvoice"
+    url = 'https://services.robokassa.ru/InvoiceServiceWebApi/api/CreateInvoice'
 
-    invoice_id = f"inv_user{user_id}"
-    out_sum = str(package['fiat_price'])
-    description = f"Покупка пакета {package['name']}"
+    header = {
+        "typ": "JWT",
+        "alg": "MD5"
+    }
+    encode_header = base64_encode(header)
 
-    sign_string = f"{RB_MERCHANT_LOGIN}:{out_sum}:{invoice_id}:{RB_TEST_PASSWORD1}"
-    signature_value = hashlib.md5(sign_string.encode("utf-8")).hexdigest()
+    payload = {
+            "MerchantLogin": RB_MERCHANT_LOGIN,
+            "InvoiceType": "OneTime",
+            "Culture": "ru",
+            "InvId": None,
+            "OutSum": str(package['fiat_price']),
+            "Description": f"Покупка пакета {package['name']}",
+            "MerchantComments": "test",
+            "IsTest": 1,
+            "UserFields": {
+                "shp_user_id": str(user_id),
+                "shp_package_id": str(data[1])
+            },
+            "InvoiceItems": [
+                {
+                "Name": f"Пакет {package['name']}",
+                "Quantity": 1,
+                "Cost": str(package['fiat_price']),
+                "Tax": "vat20",
+                "PaymentMethod": "full_payment",
+                "PaymentObject": "commodity"
+                }
+            ]
+        }
+    encode_payload = base64_encode(payload)
 
-    form = aiohttp.FormData()
-    form.add_field("MerchantLogin", RB_MERCHANT_LOGIN)
-    form.add_field("OutSum", out_sum)
-    form.add_field("InvoiceID", invoice_id)
-    form.add_field("Description", description)
-    form.add_field("SignatureValue", signature_value)
-    form.add_field("Culture", "ru")
-    form.add_field("Encoding", "utf-8")
-    form.add_field("IsTest", "1")
-    form.add_field("shp_user_id", str(user_id))
+    secret_string = f"{RB_MERCHANT_LOGIN}:{RB_TEST_PASSWORD1}"
+    secret_key = base64.b64encode(secret_string.encode("utf-8"))
+
+    signature = hmac.new(
+        secret_key,
+        f"{encode_header}.{encode_payload}".encode("utf-8"),
+        hashlib.md5
+    ).digest()
+
+    encode_signature = base64_encode(signature)
+
+    jwt_token = f"{encode_header}.{encode_payload}.{encode_signature}"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {jwt_token}"
+    }
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, data=form) as response:
+        async with session.post(url, headers=headers) as response:
             try:
                 data = await response.json(content_type=None)
                 logging.info("Ответ Робокассы: %s", data)
@@ -84,9 +113,9 @@ async def let_pay_message(call: CallbackQuery):
             start_parameter=f"index_pack{data[1]}_for_{call.from_user.id}"
         )
     else:
-        payment_url = await create_invoice(call.from_user.id, package)
-        if payment_url:
-            await call.message.answer(f"Для оплаты перейдите по ссылке: {payment_url}")
+        resp = await create_invoice(call.from_user.id, package)
+        if resp is not None:
+            await call.message.answer(resp)
         else:
             await call.message.answer("Ошибка при создании платежа")
 
