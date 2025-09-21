@@ -60,14 +60,16 @@ async def let_pay_message(call: CallbackQuery):
             link = await robokassa.generate_protected_payment_link(
                 invoice_type=InvoiceType.ONE_TIME,
                 out_sum=package['fiat_price'],
-                description=f"покупка пользователем с id {call.from_user.id}",
+                description=f"покупк пользователем с id {call.from_user.id}",
                 culture=Culture.RU,
-                merchant_comments="",
-                
+                merchant_comments="",  
             )
         except Exception as e:
-            await call. message.answer("Ошибка при создании оплаты, попробуйте позже или оплатите звездами")
-            logging.error(f"Ошибка при создании ссылки для оплаты RB - {e}")
+            try:
+                link = robokassa.generate_open_payment_link(package['fiat_price'], inv_id=0, culture=Culture.RU)
+            except:
+                await call. message.answer("Ошибка при создании оплаты, попробуйте позже или оплатите звездами")
+                logging.error(f"Ошибка при создании ссылки для оплаты RB - {e}")
         await call.message.answer(f"Для оплаты пакета {package['name']} на сумму {package['fiat_price']} рублей воспользуйтесь кнопкой ниже!",
                                   reply_markup=fiat_pay_kb(link.url))
 
