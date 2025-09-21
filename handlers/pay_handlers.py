@@ -60,18 +60,19 @@ async def let_pay_message(call: CallbackQuery):
             "InvoiceType": "OneTime",
             "Culture": "ru",
             "InvId": None,
-            "OutSum": 1,
-            "Description": "as",
+            "OutSum": package['fiat_price'],
+            "Description": f"Покупка пакета {package['name']}",
             "MerchantComments": "test",
             "IsTest": 1,
             "UserFields": {
-                "shp_info": "test"
+                "shp_user_id": str(call.from_user.id),
+                "shp_package_id": str(data[1])
             },
             "InvoiceItems": [
                 {
-                "Name": "Тест1",
+                "Name": f"Пакет {package['name']}",
                 "Quantity": 1,
-                "Cost": 0.5,
+                "Cost": package['fiat_price'],
                 "Tax": "vat20",
                 "PaymentMethod": "full_payment",
                 "PaymentObject": "commodity"
@@ -99,14 +100,38 @@ async def let_pay_message(call: CallbackQuery):
             "Authorization": f"Bearer {jwt_token}"
         }
 
+        request_body = {
+            "request": {
+                "MerchantLogin": RB_MERCHANT_LOGIN,
+                "OutSum": package['fiat_price'],
+                "Description": f"Покупка пакета {package['name']}",
+                "InvoiceID": f"inv_user{call.from_user.id}",
+                "Culture": "ru",
+                "Encoding": "utf-8",
+                "IsTest": 1,
+                "shp_user_id": str(call.from_user.id),
+                "shp_package_id": str(data[1])
+            }
+        }
+
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, headers=headers) as response:
+            async with session.post(url, headers=headers, json=request_body) as response:
                 try:
                     response_data = await response.json()
                     logging.info("Успешный ответ: %s", response_data)
+                    if response.status == 200:
+                        payment_url = response_data.get('url')
+                        if payment_url:
+                            await call.message.answer(f"Для оплаты перейдите по ссылке: {payment_url}")
+                        else:
+                            await call.message.answer("Ошибка при создании платежа")
+                    else:
+                        await call.message.answer("Ошибка при создании платежа")
+                        
                 except Exception as e:
                     error_text = await response.text() if response else "No response"
                     logging.error("Ошибка запроса: %s. Детали ошибки: %s", e, error_text)
+                    await call.message.answer("Произошла ошибка при обработке платежа")
 
     await asyncio.sleep(240)
     user = await db_repo.get_user(call.from_user.id)
