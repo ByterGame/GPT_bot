@@ -77,7 +77,7 @@ async def create_invoice(user_id: int, package: dict):
     }
 
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers, json=request_body) as response:
+        async with session.post(url, headers=headers, data=request_body) as response:
             try:
                 data = await response.json(content_type=None)
                 logging.info("Ответ Робокассы: %s", data)
