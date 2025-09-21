@@ -44,10 +44,8 @@ async def create_invoice(user_id: int, package: dict):
         "shp_user_id": str(user_id),
     }
 
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-
     async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers, data=payload) as response:
+        async with session.post(url, data=payload) as response:
             try:
                 data = await response.json()
                 logging.info("Ответ Робокассы: %s", data)
