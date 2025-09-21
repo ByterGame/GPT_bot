@@ -5,11 +5,9 @@ from database.core import db
 from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel, select_pack_kb, fiat_pay_kb
 from create_bot import bot
 from aiogram.exceptions import TelegramBadRequest
-import aiohttp
+from aiohttp import web
 import base64
 import json
-import hashlib
-import hmac
 import logging
 from robokassa import HashAlgorithm, Robokassa
 from robokassa.types import InvoiceType, Culture
@@ -63,7 +61,8 @@ async def let_pay_message(call: CallbackQuery):
             out_sum=package['fiat_price'],
             description=f"покупка пользователем с id {call.from_user.id}",
             culture=Culture.RU,
-            merchant_comments=""
+            merchant_comments="",
+            
         )
         await call.message.answer(f"Для оплаты пакета {package['name']} на сумму {package['fiat_price']} рублей воспользуйтесь кнопкой ниже!",
                                   reply_markup=fiat_pay_kb(link.url))
@@ -145,7 +144,15 @@ async def check_bonus_sub(call: CallbackQuery):
         raise e
     except Exception as e:
         print(f"Error checking subscription: {e}")
-        return False   
+        return False
+
+
+async def check_rb_pay(request: web.Request):
+    try:
+        data = await request.json()
+        logging.info(f"Получено подтверждение от RB: {data}")  
+    except Exception as e:
+        logging.error(f"Ошибка {e}")
     
 
 def base64_encode(data):

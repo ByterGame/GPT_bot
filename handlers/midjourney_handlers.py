@@ -133,7 +133,6 @@ async def upscale_handler(call: CallbackQuery):
 
 async def handle_mj_callback(request: web.Request):
     try:
-        logging.info("Запрос дошел")
         data = await request.json()
         logging.info(f"Получен колбэк от Midjourney: {data}")
         

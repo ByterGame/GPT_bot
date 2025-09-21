@@ -8,11 +8,10 @@ from database import close_pool
 from handlers.start_handler import start_router
 from handlers.commands_handler import command_router
 from handlers.message_for_network_handler import general_router
-from handlers.midjourney_handlers import midjourney_router
-from handlers.pay_handlers import pay_router
+from handlers.midjourney_handlers import midjourney_router, handle_mj_callback
+from handlers.pay_handlers import pay_router, check_rb_pay
 from handlers.admin_handlers import admin_router
 from aiohttp import web
-from handlers.midjourney_handlers import handle_mj_callback
 from config import (WEBHOOK_PATH, WEBHOOK_URL, PORT_BOT, PAY_DESC, MODE_DESC, 
                     START_DESC, PROFILE_DESC, REFERAL_DESC,
                     SUPPORT_DESC, CLEAR_CONTEXT_DESC, LEGAL_DOCUMENTS_DESC)
@@ -51,6 +50,8 @@ async def main():
 
     app = web.Application()
     app.router.add_post('/mj', handle_mj_callback)
+    app.router.add_post('/robokassa', check_rb_pay)
+
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
