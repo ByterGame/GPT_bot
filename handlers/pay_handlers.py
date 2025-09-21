@@ -163,8 +163,20 @@ async def check_rb_pay(request: web.Request):
     try:
         data = await request.post()
         logging.info(f"Получено подтверждение от RB: {dict(data)}")
-        inv_id = data.get("InvId")
-        return web.Response(text=f"OK{inv_id}", content_type="text/plain")
+        try:
+            inv_id = data.get("InvId")
+            user_id = int(data.get("shp_user_id"))
+            add_token_count = int(data.get("shp_token_count"))
+            db_repo = await db.get_repository()
+            user = await db_repo.get_user(user_id)
+            user.balance += add_token_count
+            await db_repo.update_user(user)
+            await bot.send_message(chat_id=user_id, text="Токены успешно начислены")
+            return web.Response(text=f"OK{inv_id}", content_type="text/plain")
+        except Exception as e:
+            logging.error(f"Ошибка при подтверждении оплаты - {e}")
+            user_id = int(data.get("shp_user_id"))
+            await bot.send_message(chat_id=user_id, text="Ошибка во время подтверждения оплаты, повторная попытка")
     except Exception as e:
         logging.error(f"Ошибка {e}")
     
