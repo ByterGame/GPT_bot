@@ -5,7 +5,16 @@ from database.core import db
 from keyboards.all_inline_kb import referal_kb, kb_with_bonus_channel, select_pack_kb
 from create_bot import bot
 from aiogram.exceptions import TelegramBadRequest
-from config import REMINDER, SELECT_PACK_TEXT
+import aiohttp
+import base64
+import json
+import hashlib
+import hmac
+import logging
+from config import (REMINDER, SELECT_PACK_TEXT,
+                    RB_PASSWORD1, RB_PASSWORD2,
+                    RB_TEST_PASSWORD1, RB_TEST_PASSWORD2, 
+                    RB_MERCHANT_LOGIN)
 
 
 pay_router = Router()
@@ -38,7 +47,66 @@ async def let_pay_message(call: CallbackQuery):
             start_parameter=f"index_pack{data[1]}_for_{call.from_user.id}"
         )
     else:
-        pass # тут оплата рублями через робокассу 
+        url = 'https://services.robokassa.ru/InvoiceServiceWebApi/api/CreateInvoice'
+
+        header = {
+            "typ": "JWT",
+            "alg": "MD5"
+        }
+        encode_header = base64_encode(header)
+
+        payload = {
+            "MerchantLogin": RB_MERCHANT_LOGIN,
+            "InvoiceType": "OneTime",
+            "Culture": "ru",
+            "InvId": None,
+            "OutSum": 1,
+            "Description": "as",
+            "MerchantComments": "test",
+            "IsTest": 1,
+            "UserFields": {
+                "shp_info": "test"
+            },
+            "InvoiceItems": [
+                {
+                "Name": "Тест1",
+                "Quantity": 1,
+                "Cost": 0.5,
+                "Tax": "vat20",
+                "PaymentMethod": "full_payment",
+                "PaymentObject": "commodity"
+                }
+            ]
+        }
+        encode_payload = base64_encode(payload)
+
+        signing_input = f"{encode_header}.{encode_payload}"
+        secret_key_string = f"{RB_MERCHANT_LOGIN}:{RB_TEST_PASSWORD1}"
+        secret_key_base64 = base64.b64encode(secret_key_string.encode('utf-8')).decode('utf-8')
+
+        signature = hmac.new(
+            secret_key_base64.encode('utf-8'),
+            signing_input.encode('utf-8'),
+            hashlib.md5
+        ).hexdigest()
+
+        encode_signature = base64_encode(signature)
+
+        jwt_token = f"{encode_header}.{encode_payload}.{encode_signature}"
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {jwt_token}"
+        }
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, headers=headers) as response:
+                try:
+                    logging.info("Успешный ответ:", response.json())
+                except Exception as e:
+                    logging.error("Ошибка запроса:", e)
+                    if response is not None:
+                        logging.error("Детали ошибки:", response.text)
 
     await asyncio.sleep(240)
     user = await db_repo.get_user(call.from_user.id)
@@ -119,3 +187,9 @@ async def check_bonus_sub(call: CallbackQuery):
         print(f"Error checking subscription: {e}")
         return False   
     
+
+def base64_encode(data: dict) -> str:
+    if isinstance(data, dict):
+        data = json.dumps(data).encode('utf-8')
+    encoded = base64.urlsafe_b64encode(data).decode('utf-8')
+    return encoded.rstrip('=')

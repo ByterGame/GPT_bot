@@ -13,6 +13,11 @@ GOOGLE_API_KEY = config('GOOGLE_API_KEY')
 CX_ID = config('CX_ID')
 MJ_KEY = config('MJ_KEY')
 SECRET_TOKEN = config('SECRET_TOKEN')
+RB_PASSWORD1 = config('RB_PASSWORD1')
+RB_PASSWORD2 = config('RB_PASSWORD2')
+RB_TEST_PASSWORD1 = config('RB_TEST_PASSWORD1')
+RB_TEST_PASSWORD2 = config('RB_TEST_PASSWORD2')
+RB_MERCHANT_LOGIN = config('RB_MERCHANT_LOGIN')
 
 
 TERMS_TEXT = ("📄 <b>Пользовательское соглашение</b>\n\n"
