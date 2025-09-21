@@ -155,8 +155,10 @@ async def check_bonus_sub(call: CallbackQuery):
 
 async def check_rb_pay(request: web.Request):
     try:
-        data = await request.json()
-        logging.info(f"Получено подтверждение от RB: {data}")  
+        data = await request.post()
+        logging.info(f"Получено подтверждение от RB: {dict(data)}")
+
+        return web.Response(text="OK")
     except Exception as e:
         logging.error(f"Ошибка {e}")
     
